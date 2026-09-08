@@ -837,4 +837,29 @@ function closeModal() {
   document.getElementById('product-form').reset();
 }
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
-function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
+function closeModal() { document.getElementById('modal-product').classList.remove('open'); } 
+
+function poblarSelectObras(obras) {
+  const selectSalidaObra = document.getElementById('salida-obra');
+  const selectCestaObra = document.getElementById('cesta-obra');
+
+  const options = '<option value="">Seleccione Obra</option>' + 
+    obras.map(o => `<option value="${o.direccion || o.nombre}">${o.direccion || o.nombre} ${o.lote && o.lote !== 'N/A' ? ' (' + o.lote + ')' : ''}</option>`).join('');
+
+  if (selectSalidaObra) selectSalidaObra.innerHTML = options;
+  if (selectCestaObra) selectCestaObra.innerHTML = options;
+}
+
+function poblarSelectContratistas(contratistas) {
+  const selectSalidaCnt = document.getElementById('salida-solicitante');
+  const selectCestaCnt = document.getElementById('cesta-contratista');
+
+  const options = '<option value="">Seleccione Contratista</option>' + 
+    contratistas.map(c => {
+      const nombreCompleto = `${c.first_name} ${c.middle_name || ''} ${c.last_name || ''}`.trim();
+      return `<option value="${nombreCompleto}">${nombreCompleto} ${c.phone ? ' - ' + c.phone : ''}</option>`;
+    }).join('');
+
+  if (selectSalidaCnt) selectSalidaCnt.innerHTML = options;
+  if (selectCestaCnt) selectCestaCnt.innerHTML = options;
+}
