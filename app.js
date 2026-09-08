@@ -96,27 +96,40 @@ function aplicarPermisosRol() {
 // 2. CARGA GENERAL DE DATOS
 // ==========================================
 async function cargarDatos() {
+  // 1. Cargar Productos
   const { data: productos, error: errProd } = await _supabase.from('productos').select('*');
   if (errProd) console.error('Error cargando productos:', errProd);
 
+  // 2. Cargar Movimientos
   const { data: movimientos, error: errMov } = await _supabase
     .from('movimientos')
     .select('*, productos(nombre, costo_unitario)')
     .order('fecha', { ascending: false });
-
   if (errMov) console.error('Error cargando movimientos:', errMov);
 
+  // 3. Cargar Obras
   const { data: obras, error: errObras } = await _supabase.from('obras').select('*');
   if (errObras) console.error('Error cargando obras:', errObras);
 
+  // 4. Cargar Contratistas
+  const { data: contratistas, error: errCnt } = await _supabase.from('contratistas').select('*');
+  if (errCnt) console.error('Error cargando contratistas:', errCnt);
+
+  // Renderizar vistas del Dashboard e Inventario
   renderizarDashboard(productos || [], movimientos || [], obras || []);
   renderizarTablaInventario(productos || []);
-  poblarSelectProductos(productos || []);
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
+  
+  // Poblar desplegables (Selects)
+  poblarSelectProductos(productos || []);
+  poblarSelectObras(obras || []);
+  poblarSelectContratistas(contratistas || []);
+
+  // Renderizar tablas de módulos
   renderizarTablaObras(obras || []);
-  cargarContratistas();
+  cargarContratistas(contratistas || []);
 }
 
 // ==========================================
@@ -251,7 +264,7 @@ function renderizarDashboard(productos, movimientos, obras) {
 }
 
 // ==========================================
-// 4. MÓDULO MATERIALES / PRODUCTOS (CON EDICIÓN)
+// 4. MÓDULO MATERIALES / PRODUCTOS (EDICIÓN)
 // ==========================================
 function renderizarTablaInventario(productos) {
   const tbody = document.getElementById('inventory-table-body');
@@ -325,6 +338,9 @@ async function eliminarProducto(id) {
   }
 }
 
+// ==========================================
+// POBLAR SELECTS (DESPLEGABLES DINOÁMICOS)
+// ==========================================
 function poblarSelectProductos(productos) {
   const selectMov = document.getElementById('mov-producto');
   const selectCompra = document.getElementById('compra-producto');
@@ -338,6 +354,31 @@ function poblarSelectProductos(productos) {
   if (selectCompra) selectCompra.innerHTML = options;
   if (selectSalida) selectSalida.innerHTML = options;
   if (selectCesta) selectCesta.innerHTML = options;
+}
+
+function poblarSelectObras(obras) {
+  const selectSalidaObra = document.getElementById('salida-obra');
+  const selectCestaObra = document.getElementById('cesta-obra');
+
+  const options = '<option value="">Seleccione Obra</option>' + 
+    obras.map(o => `<option value="${o.direccion || o.nombre}">${o.direccion || o.nombre} ${o.lote && o.lote !== 'N/A' ? ' (' + o.lote + ')' : ''}</option>`).join('');
+
+  if (selectSalidaObra) selectSalidaObra.innerHTML = options;
+  if (selectCestaObra) selectCestaObra.innerHTML = options;
+}
+
+function poblarSelectContratistas(contratistas) {
+  const selectSalidaCnt = document.getElementById('salida-solicitante');
+  const selectCestaCnt = document.getElementById('cesta-contratista');
+
+  const options = '<option value="">Seleccione Contratista</option>' + 
+    contratistas.map(c => {
+      const nombreCompleto = `${c.first_name} ${c.middle_name || ''} ${c.last_name || ''}`.trim();
+      return `<option value="${nombreCompleto}">${nombreCompleto} ${c.phone ? ' - ' + c.phone : ''}</option>`;
+    }).join('');
+
+  if (selectSalidaCnt) selectSalidaCnt.innerHTML = options;
+  if (selectCestaCnt) selectCestaCnt.innerHTML = options;
 }
 
 // ==========================================
@@ -709,25 +750,30 @@ async function registrarContratista(e) {
   cargarDatos();
 }
 
-async function cargarContratistas() {
+async function cargarContratistas(contratistasList) {
   const tbody = document.getElementById('contractors-table-body');
   if (!tbody) return;
 
-  const { data: contratistas, error } = await _supabase.from('contratistas').select('*').order('created_at', { ascending: false });
+  let contratistas = contratistasList;
+  if (!contratistas) {
+    const { data, error } = await _supabase.from('contratistas').select('*');
+    if (error) return console.error('Error al cargar contratistas:', error);
+    contratistas = data;
+  }
 
-  if (error || !contratistas || contratistas.length === 0) {
+  if (!contratistas || contratistas.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No contractors registered.</td></tr>';
     return;
   }
 
   tbody.innerHTML = contratistas.map(c => `
     <tr>
-      <td><b>${c.first_name} ${c.middle_name || ''} ${c.last_name || ''}</b></td>
+      <td><b>${c.first_name || ''} ${c.middle_name || ''} ${c.last_name || ''}</b></td>
       <td>${c.phone || 'N/A'}</td>
       <td>${c.email || 'N/A'}</td>
       <td>${c.ssn || c.itin || 'N/A'}</td>
       <td>${c.address ? `${c.address}, ${c.city || ''}` : 'N/A'}</td>
-      <td><span class="badge badge-in">${c.status}</span></td>
+      <td><span class="badge badge-in">${c.status || 'Active Contractor'}</span></td>
       <td>
         <button onclick="prepararEdicionContratista('${c.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right:0.5rem;">Edit</button>
         <button onclick="eliminarContratista('${c.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Delete</button>
