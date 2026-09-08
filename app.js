@@ -6,6 +6,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let cestaMateriales = [];
 let usuarioActual = null;
+let productoEditandoId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   lucide.createIcons();
@@ -250,7 +251,7 @@ function renderizarDashboard(productos, movimientos, obras) {
 }
 
 // ==========================================
-// 4. TABLAS Y DESPLEGABLES
+// 4. MÓDULO MATERIALES / PRODUCTOS (CON EDICIÓN)
 // ==========================================
 function renderizarTablaInventario(productos) {
   const tbody = document.getElementById('inventory-table-body');
@@ -266,9 +267,62 @@ function renderizarTablaInventario(productos) {
       <td>${p.categoria}</td>
       <td style="color:${p.stock_actual <= p.stock_minimo ? 'red' : 'inherit'}; font-weight:bold;">${p.stock_actual}</td>
       <td>$${p.costo_unitario.toFixed(2)}</td>
-      <td><button onclick="eliminarProducto('${p.id}')" style="color:red; border:none; background:none; cursor:pointer;">Eliminar</button></td>
+      <td>
+        <button onclick="prepararEdicionProducto('${p.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right: 0.5rem;">Editar</button>
+        <button onclick="eliminarProducto('${p.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+      </td>
     </tr>
   `).join('');
+}
+
+async function prepararEdicionProducto(id) {
+  const { data: p, error } = await _supabase.from('productos').select('*').eq('id', id).single();
+  if (error) return alert('Error al consultar producto: ' + error.message);
+
+  productoEditandoId = id;
+  document.getElementById('prod-sku').value = p.sku;
+  document.getElementById('prod-nombre').value = p.nombre;
+  document.getElementById('prod-categoria').value = p.categoria;
+  document.getElementById('prod-stock').value = p.stock_actual;
+  document.getElementById('prod-min').value = p.stock_minimo;
+  document.getElementById('prod-costo').value = p.costo_unitario;
+
+  openModal();
+}
+
+async function guardarProducto(e) {
+  e.preventDefault();
+  const prodData = {
+    sku: document.getElementById('prod-sku').value,
+    nombre: document.getElementById('prod-nombre').value,
+    categoria: document.getElementById('prod-categoria').value,
+    stock_actual: Number(document.getElementById('prod-stock').value),
+    stock_minimo: Number(document.getElementById('prod-min').value),
+    costo_unitario: Number(document.getElementById('prod-costo').value)
+  };
+
+  let res;
+  if (productoEditandoId) {
+    res = await _supabase.from('productos').update(prodData).eq('id', productoEditandoId);
+  } else {
+    res = await _supabase.from('productos').insert([prodData]);
+  }
+
+  if (res.error) alert('Error al guardar producto: ' + res.error.message);
+  else {
+    productoEditandoId = null;
+    closeModal();
+    document.getElementById('product-form').reset();
+    cargarDatos();
+  }
+}
+
+async function eliminarProducto(id) {
+  if (confirm('¿Eliminar producto?')) {
+    const { error } = await _supabase.from('productos').delete().eq('id', id);
+    if (error) alert('Error al eliminar: ' + error.message);
+    else cargarDatos();
+  }
 }
 
 function poblarSelectProductos(productos) {
@@ -526,46 +580,36 @@ function imprimirConduce() {
 }
 
 // ==========================================
-// 8. MÓDULO PROYECTOS / OBRAS
+// 8. MÓDULO PROYECTOS / OBRAS (CON EDICIÓN)
 // ==========================================
 async function registrarObra(e) {
   e.preventDefault();
+  const id = document.getElementById('obra-id') ? document.getElementById('obra-id').value : null;
+  const direccion = document.getElementById('obra-direccion').value.trim();
 
-  const direccionInput = document.getElementById('obra-direccion');
-  const loteInput = document.getElementById('obra-lote');
-  const faseInput = document.getElementById('obra-fase');
-  const subdivisionInput = document.getElementById('obra-subdivision');
-  const zipInput = document.getElementById('obra-zip');
-  const countyInput = document.getElementById('obra-county');
-
-  if (!direccionInput) return;
-
-  const direccion = direccionInput.value.trim();
-  const lote = loteInput ? loteInput.value.trim() : '';
-  const fase = faseInput ? faseInput.value.trim() : '';
-  const subdivision = subdivisionInput ? subdivisionInput.value.trim() : '';
-  const zip = zipInput ? zipInput.value.trim() : '';
-  const county = countyInput ? countyInput.value.trim() : '';
-
-  const nuevaObra = {
+  const obraData = {
     nombre: direccion,
     direccion: direccion,
-    lote: lote || 'N/A',
-    fase: fase || 'N/A',
-    subdivision: subdivision || 'N/A',
-    codigo_postal: zip || 'N/A',
-    county: county || 'N/A',
+    lote: document.getElementById('obra-lote').value.trim() || 'N/A',
+    fase: document.getElementById('obra-fase').value.trim() || 'N/A',
+    subdivision: document.getElementById('obra-subdivision').value.trim() || 'N/A',
+    codigo_postal: document.getElementById('obra-zip').value.trim() || 'N/A',
+    county: document.getElementById('obra-county').value.trim() || 'N/A',
     estado: 'Activa'
   };
 
-  const { error } = await _supabase.from('obras').insert([nuevaObra]);
-
-  if (error) {
-    return alert('Error al guardar la obra en Supabase: ' + error.message);
+  let res;
+  if (id) {
+    res = await _supabase.from('obras').update(obraData).eq('id', id);
+  } else {
+    res = await _supabase.from('obras').insert([obraData]);
   }
 
-  alert('¡Proyecto / Obra registrado con éxito!');
+  if (res.error) return alert('Error al guardar la obra: ' + res.error.message);
+
+  alert(id ? '¡Obra actualizada con éxito!' : '¡Proyecto registrado con éxito!');
   document.getElementById('obra-form').reset();
+  if (document.getElementById('obra-id')) document.getElementById('obra-id').value = '';
   cargarDatos();
 }
 
@@ -588,10 +632,33 @@ function renderizarTablaObras(obras) {
       <td>${o.county || 'N/A'}</td>
       <td><span class="badge badge-in">${o.estado || 'Activa'}</span></td>
       <td>
+        <button onclick="prepararEdicionObra('${o.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right: 0.5rem;">Editar</button>
         <button onclick="eliminarObra('${o.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
       </td>
     </tr>
   `).join('');
+}
+
+async function prepararEdicionObra(id) {
+  const { data: o, error } = await _supabase.from('obras').select('*').eq('id', id).single();
+  if (error) return alert('Error al consultar la obra');
+
+  if (!document.getElementById('obra-id')) {
+    const inputId = document.createElement('input');
+    inputId.type = 'hidden';
+    inputId.id = 'obra-id';
+    document.getElementById('obra-form').appendChild(inputId);
+  }
+
+  document.getElementById('obra-id').value = o.id;
+  document.getElementById('obra-direccion').value = o.direccion || '';
+  document.getElementById('obra-lote').value = o.lote !== 'N/A' ? o.lote : '';
+  document.getElementById('obra-fase').value = o.fase !== 'N/A' ? o.fase : '';
+  document.getElementById('obra-subdivision').value = o.subdivision !== 'N/A' ? o.subdivision : '';
+  document.getElementById('obra-zip').value = o.codigo_postal !== 'N/A' ? o.codigo_postal : '';
+  document.getElementById('obra-county').value = o.county !== 'N/A' ? o.county : '';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function eliminarObra(id) {
@@ -603,12 +670,13 @@ async function eliminarObra(id) {
 }
 
 // ==========================================
-// 9. MÓDULO CONTRATISTAS
+// 9. MÓDULO CONTRATISTAS (CON EDICIÓN)
 // ==========================================
 async function registrarContratista(e) {
   e.preventDefault();
+  const id = document.getElementById('cnt-id') ? document.getElementById('cnt-id').value : null;
 
-  const nuevoContratista = {
+  const cntData = {
     first_name: document.getElementById('cnt-first-name').value.trim(),
     middle_name: document.getElementById('cnt-middle-name').value.trim(),
     last_name: document.getElementById('cnt-last-name').value.trim(),
@@ -626,14 +694,18 @@ async function registrarContratista(e) {
     notify_on_updates: document.getElementById('cnt-notify').value.trim()
   };
 
-  const { error } = await _supabase.from('contratistas').insert([nuevoContratista]);
-
-  if (error) {
-    return alert('Error saving contractor: ' + error.message);
+  let res;
+  if (id) {
+    res = await _supabase.from('contratistas').update(cntData).eq('id', id);
+  } else {
+    res = await _supabase.from('contratistas').insert([cntData]);
   }
 
-  alert('¡Contractor saved successfully!');
+  if (res.error) return alert('Error saving contractor: ' + res.error.message);
+
+  alert(id ? '¡Contractor updated successfully!' : '¡Contractor saved successfully!');
   document.getElementById('contractor-form').reset();
+  if (document.getElementById('cnt-id')) document.getElementById('cnt-id').value = '';
   cargarDatos();
 }
 
@@ -641,10 +713,7 @@ async function cargarContratistas() {
   const tbody = document.getElementById('contractors-table-body');
   if (!tbody) return;
 
-  const { data: contratistas, error } = await _supabase
-    .from('contratistas')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data: contratistas, error } = await _supabase.from('contratistas').select('*').order('created_at', { ascending: false });
 
   if (error || !contratistas || contratistas.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No contractors registered.</td></tr>';
@@ -660,10 +729,42 @@ async function cargarContratistas() {
       <td>${c.address ? `${c.address}, ${c.city || ''}` : 'N/A'}</td>
       <td><span class="badge badge-in">${c.status}</span></td>
       <td>
+        <button onclick="prepararEdicionContratista('${c.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right:0.5rem;">Edit</button>
         <button onclick="eliminarContratista('${c.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Delete</button>
       </td>
     </tr>
   `).join('');
+}
+
+async function prepararEdicionContratista(id) {
+  const { data: c, error } = await _supabase.from('contratistas').select('*').eq('id', id).single();
+  if (error) return alert('Error fetching contractor');
+
+  if (!document.getElementById('cnt-id')) {
+    const inputId = document.createElement('input');
+    inputId.type = 'hidden';
+    inputId.id = 'cnt-id';
+    document.getElementById('contractor-form').appendChild(inputId);
+  }
+
+  document.getElementById('cnt-id').value = c.id;
+  document.getElementById('cnt-first-name').value = c.first_name || '';
+  document.getElementById('cnt-middle-name').value = c.middle_name || '';
+  document.getElementById('cnt-last-name').value = c.last_name || '';
+  document.getElementById('cnt-phone').value = c.phone || '';
+  document.getElementById('cnt-email').value = c.email || '';
+  document.getElementById('cnt-birth-date').value = c.birth_date || '';
+  document.getElementById('cnt-ssn').value = c.ssn || '';
+  document.getElementById('cnt-itin').value = c.itin || '';
+  document.getElementById('cnt-address').value = c.address || '';
+  document.getElementById('cnt-city').value = c.city || '';
+  document.getElementById('cnt-state').value = c.state || 'Texas';
+  document.getElementById('cnt-zip').value = c.zip || '';
+  document.getElementById('cnt-status').value = c.status || 'Active Contractor';
+  document.getElementById('cnt-summary').value = c.summary || 'Currently Employed at Broadway';
+  document.getElementById('cnt-notify').value = c.notify_on_updates || '';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function eliminarContratista(id) {
@@ -675,28 +776,8 @@ async function eliminarContratista(id) {
 }
 
 // ==========================================
-// 10. OPERACIONES GENERALES Y MODAL
+// 10. MOVIMIENTOS Y NAVEGACIÓN TAB
 // ==========================================
-async function guardarProducto(e) {
-  e.preventDefault();
-  const nuevoProd = {
-    sku: document.getElementById('prod-sku').value,
-    nombre: document.getElementById('prod-nombre').value,
-    categoria: document.getElementById('prod-categoria').value,
-    stock_actual: Number(document.getElementById('prod-stock').value),
-    stock_minimo: Number(document.getElementById('prod-min').value),
-    costo_unitario: Number(document.getElementById('prod-costo').value)
-  };
-
-  const { error } = await _supabase.from('productos').insert([nuevoProd]);
-  if (error) alert('Error al guardar producto: ' + error.message);
-  else {
-    closeModal();
-    document.getElementById('product-form').reset();
-    cargarDatos();
-  }
-}
-
 async function registrarMovimiento(e) {
   e.preventDefault();
   const prodId = document.getElementById('mov-producto').value;
@@ -735,14 +816,6 @@ async function renderizarMovimientos(movimientos) {
   `).join('');
 }
 
-async function eliminarProducto(id) {
-  if (confirm('¿Eliminar producto?')) {
-    const { error } = await _supabase.from('productos').delete().eq('id', id);
-    if (error) alert('Error al eliminar: ' + error.message);
-    else cargarDatos();
-  }
-}
-
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -754,6 +827,10 @@ function switchTab(tabId) {
 }
 
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
-function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
+function closeModal() { 
+  document.getElementById('modal-product').classList.remove('open'); 
+  productoEditandoId = null;
+  document.getElementById('product-form').reset();
+}
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
 function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
