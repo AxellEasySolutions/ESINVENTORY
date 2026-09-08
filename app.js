@@ -545,8 +545,8 @@ async function registrarObra(e) {
 
 async function cargarObras() {
   const tbody = document.getElementById('obras-table-body');
+  const dashWorksContainer = document.getElementById('dash-works');
   
-  // Ordenar por created_at (columna nativa de Supabase)
   const { data: obras, error } = await _supabase
     .from('obras')
     .select('*')
@@ -556,13 +556,34 @@ async function cargarObras() {
     console.error('Error al cargar obras desde Supabase:', error);
   }
 
-  // Actualizar KPI de Obras Activas en el Dashboard
+  // 1. Actualizar el contador del KPI "OBRAS ACTIVAS"
   const kpiObras = document.getElementById('kpi-obras-count');
   if (kpiObras) {
     const activas = obras ? obras.filter(o => o.estado === 'Activa').length : 0;
     kpiObras.innerText = activas;
   }
 
+  // 2. Renderizar la lista en el cuadro "Obras activas" del Dashboard
+  if (dashWorksContainer) {
+    const obrasActivas = obras ? obras.filter(o => o.estado === 'Activa') : [];
+    if (obrasActivas.length === 0) {
+      dashWorksContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin obras activas registradas.</p>';
+    } else {
+      dashWorksContainer.innerHTML = obrasActivas.slice(0, 5).map(o => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
+          <div>
+            <strong style="font-size:0.85rem; color:var(--text-dark);">${o.direccion || o.nombre}</strong>
+            <div style="font-size:0.72rem; color:var(--text-muted);">${o.subdivision !== 'N/A' ? o.subdivision : ''} ${o.county !== 'N/A' ? '• ' + o.county : ''}</div>
+          </div>
+          <div>
+            <span class="badge badge-in">${o.estado || 'Activa'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  // 3. Renderizar la tabla principal en el módulo "Proyectos / Obras"
   if (!tbody) return;
 
   if (error || !obras || obras.length === 0) {
@@ -584,14 +605,6 @@ async function cargarObras() {
       </td>
     </tr>
   `).join('');
-}
-
-async function eliminarObra(id) {
-  if (confirm('¿Desea eliminar esta obra del sistema?')) {
-    const { error } = await _supabase.from('obras').delete().eq('id', id);
-    if (error) alert('Error al eliminar obra: ' + error.message);
-    else cargarDatos();
-  }
 }
 
 // ==========================================
