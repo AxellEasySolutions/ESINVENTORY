@@ -430,14 +430,18 @@
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
-                <input type="text" id="salida-obra" placeholder="Ej. Residencial Las Palmas / Bodega Norte" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
-              </div>
-              <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Solicitante / Recibe</label>
-                <input type="text" id="salida-solicitante" placeholder="Nombre de quien recibe" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
-              </div>
-            </div>
+  <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
+  <select id="salida-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+    <option value="">Seleccione Obra</option>
+  </select>
+</div>
+
+<div>
+  <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Solicitante / Recibe (Contratista)</label>
+  <select id="salida-solicitante" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+    <option value="">Seleccione Contratista</option>
+  </select>
+</div>
 
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
               <div>
