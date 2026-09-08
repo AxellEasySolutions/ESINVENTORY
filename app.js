@@ -1,3 +1,4 @@
+// CONFIGURACIÓN DE SUPABASE
 const SUPABASE_URL = 'https://yuppkdlmjgneyzpuwupq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cHBrZGxtamduZXl6cHV3dXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTgyNzYsImV4cCI6MjEwNDQzNDI3Nn0.oJY0jks32BYBttOm5FYgBhAn-cIw5F6qDaXFh10No78';
 
@@ -24,21 +25,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const dispatchForm = document.getElementById('dispatch-form');
   if (dispatchForm) dispatchForm.addEventListener('submit', registrarSalidaModule);
+
+  const obraForm = document.getElementById('obra-form');
+  if (obraForm) obraForm.addEventListener('submit', registrarObra);
 });
 
-
+// ==========================================
+// 1. AUTENTICACIÓN Y CONTROL DE ROLES
+// ==========================================
 async function iniciarSesion(e) {
   e.preventDefault();
-  
 
   const email = document.getElementById('login-email').value.trim().toLowerCase();
   const password = document.getElementById('login-password').value.trim();
 
-
   const { data: usuario, error } = await _supabase
     .from('usuarios')
     .select('*')
-    .ilike('email', email)  
+    .ilike('email', email)
     .eq('password', password)
     .maybeSingle();
 
@@ -50,7 +54,6 @@ async function iniciarSesion(e) {
   if (!usuario) {
     return alert('Credenciales incorrectas. Verifique que el correo y la contraseña coincidan exactamente.');
   }
-
 
   usuarioActual = usuario;
   localStorage.setItem('sesion_usuario', JSON.stringify(usuario));
@@ -85,7 +88,9 @@ function aplicarPermisosRol() {
   if (btnNuevoProd) btnNuevoProd.style.display = esAdmin ? 'flex' : 'none';
 }
 
-
+// ==========================================
+// 2. CARGA GENERAL DE DATOS
+// ==========================================
 async function cargarDatos() {
   const { data: productos, error: errProd } = await _supabase.from('productos').select('*');
   if (errProd) return console.error('Error cargando productos:', errProd);
@@ -103,9 +108,14 @@ async function cargarDatos() {
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
+  
+  // Carga e impresión de la lista de obras y actualización del KPI
+  cargarObras();
 }
 
-
+// ==========================================
+// 3. DASHBOARD Y KPIs ($ USD)
+// ==========================================
 function renderizarDashboard(productos, movimientos) {
   document.getElementById('kpi-materiales').innerText = productos.length;
 
@@ -213,7 +223,9 @@ function renderizarDashboard(productos, movimientos) {
   dashWorksContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin obras activas registradas.</p>';
 }
 
-
+// ==========================================
+// 4. TABLAS Y DESPLEGABLES
+// ==========================================
 function renderizarTablaInventario(productos) {
   const tbody = document.getElementById('inventory-table-body');
   if (!tbody) return;
@@ -248,6 +260,9 @@ function poblarSelectProductos(productos) {
   if (selectCesta) selectCesta.innerHTML = options;
 }
 
+// ==========================================
+// 5. ENTRADAS / COMPRAS
+// ==========================================
 function calcularTotalCompra() {
   const cant = Number(document.getElementById('compra-cantidad').value) || 0;
   const costo = Number(document.getElementById('compra-costo').value) || 0;
@@ -342,7 +357,9 @@ async function cargarHistorialCompras() {
   `).join('');
 }
 
-
+// ==========================================
+// 6. SALIDAS / ENTREGAS
+// ==========================================
 async function registrarSalidaModule(e) {
   e.preventDefault();
 
@@ -411,6 +428,9 @@ async function cargarHistorialSalidas() {
   `).join('');
 }
 
+// ==========================================
+// 7. CESTA DE ENTREGA (CONDUCE)
+// ==========================================
 function agregarACesta() {
   const select = document.getElementById('cesta-producto-select');
   const prodId = select.value;
@@ -479,7 +499,89 @@ function imprimirConduce() {
   window.print();
 }
 
+// ==========================================
+// 8. MÓDULO PROYECTOS / OBRAS
+// ==========================================
+async function registrarObra(e) {
+  e.preventDefault();
 
+  const direccion = document.getElementById('obra-direccion').value.trim();
+  const lote = document.getElementById('obra-lote').value.trim();
+  const fase = document.getElementById('obra-fase').value.trim();
+  const subdivision = document.getElementById('obra-subdivision').value.trim();
+  const zip = document.getElementById('obra-zip').value.trim();
+  const county = document.getElementById('obra-county').value.trim();
+
+  const nuevaObra = {
+    nombre: direccion,
+    direccion: direccion,
+    lote: lote || 'N/A',
+    fase: fase || 'N/A',
+    subdivision: subdivision || 'N/A',
+    codigo_postal: zip || 'N/A',
+    county: county || 'N/A',
+    estado: 'Activa'
+  };
+
+  const { error } = await _supabase.from('obras').insert([nuevaObra]);
+
+  if (error) {
+    return alert('Error al guardar la obra: ' + error.message);
+  }
+
+  alert('¡Proyecto / Obra registrado con éxito!');
+  document.getElementById('obra-form').reset();
+  cargarDatos();
+}
+
+async function cargarObras() {
+  const tbody = document.getElementById('obras-table-body');
+  
+  const { data: obras, error } = await _supabase
+    .from('obras')
+    .select('*')
+    .order('fecha_creacion', { ascending: false });
+
+  const kpiObras = document.getElementById('kpi-obras-count');
+  if (kpiObras) {
+    const activas = obras ? obras.filter(o => o.estado === 'Activa').length : 0;
+    kpiObras.innerText = activas;
+  }
+
+  if (!tbody) return;
+
+  if (error || !obras || obras.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay obras registradas.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = obras.map(o => `
+    <tr>
+      <td><b>${o.direccion}</b></td>
+      <td>${o.lote}</td>
+      <td>${o.fase}</td>
+      <td>${o.subdivision}</td>
+      <td>${o.codigo_postal}</td>
+      <td>${o.county}</td>
+      <td><span class="badge badge-in">${o.estado}</span></td>
+      <td>
+        <button onclick="eliminarObra('${o.id}')" style="color:red; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function eliminarObra(id) {
+  if (confirm('¿Desea eliminar esta obra del sistema?')) {
+    const { error } = await _supabase.from('obras').delete().eq('id', id);
+    if (error) alert('Error al eliminar: ' + error.message);
+    else cargarDatos();
+  }
+}
+
+// ==========================================
+// 9. OPERACIONES GENERALES Y MODAL
+// ==========================================
 async function guardarProducto(e) {
   e.preventDefault();
   const nuevoProd = {
@@ -555,94 +657,9 @@ function switchTab(tabId) {
 
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
 }
-// Listener para el formulario de Obras en DOMContentLoaded
-const obraForm = document.getElementById('obra-form');
-if (obraForm) {
-  obraForm.addEventListener('submit', registrarObra);
-}
 
-// 1. Guardar nueva Obra en Supabase
-async function registrarObra(e) {
-  e.preventDefault();
-
-  const direccion = document.getElementById('obra-direccion').value.trim();
-  const lote = document.getElementById('obra-lote').value.trim();
-  const fase = document.getElementById('obra-fase').value.trim();
-  const subdivision = document.getElementById('obra-subdivision').value.trim();
-  const zip = document.getElementById('obra-zip').value.trim();
-  const county = document.getElementById('obra-county').value.trim();
-
-  const nuevaObra = {
-    nombre: direccion,
-    direccion: direccion,
-    lote: lote || 'N/A',
-    fase: fase || 'N/A',
-    subdivision: subdivision || 'N/A',
-    codigo_postal: zip || 'N/A',
-    county: county || 'N/A',
-    estado: 'Activa'
-  };
-
-  const { error } = await _supabase.from('obras').insert([nuevaObra]);
-
-  if (error) {
-    return alert('Error al guardar la obra: ' + error.message);
-  }
-
-  alert('¡Proyecto / Obra registrado con éxito!');
-  document.getElementById('obra-form').reset();
-  cargarDatos();
-}
-
-// 2. Cargar e imprimir la lista de obras y actualizar los KPIs
-async function cargarObras() {
-  const tbody = document.getElementById('obras-table-body');
-  
-  const { data: obras, error } = await _supabase
-    .from('obras')
-    .select('*')
-    .order('fecha_creacion', { ascending: false });
-
-  // Actualizar KPI de Obras Activas en el Dashboard
-  const kpiObras = document.getElementById('kpi-obras-count');
-  if (kpiObras) {
-    const activas = obras ? obras.filter(o => o.estado === 'Activa').length : 0;
-    kpiObras.innerText = activas;
-  }
-
-  if (!tbody) return;
-
-  if (error || !obras || obras.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay obras registradas.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = obras.map(o => `
-    <tr>
-      <td><b>${o.direccion}</b></td>
-      <td>${o.lote}</td>
-      <td>${o.fase}</td>
-      <td>${o.subdivision}</td>
-      <td>${o.codigo_postal}</td>
-      <td>${o.county}</td>
-      <td><span class="badge badge-in">${o.estado}</span></td>
-      <td>
-        <button onclick="eliminarObra('${o.id}')" style="color:red; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-// 3. Eliminar Obra
-async function eliminarObra(id) {
-  if (confirm('¿Desea eliminar esta obra del sistema?')) {
-    const { error } = await _supabase.from('obras').delete().eq('id', id);
-    if (error) alert('Error al eliminar: ' + error.message);
-    else cargarDatos();
-  }
-}
-
-// Recuerda agregar la llamada cargarObras() dentro de tu función principal cargarDatos().
+function openModal() { document.getElementById('modal-product').classList.add('open'); }
+function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
 
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
 function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
