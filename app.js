@@ -93,7 +93,7 @@ function aplicarPermisosRol() {
 // ==========================================
 async function cargarDatos() {
   const { data: productos, error: errProd } = await _supabase.from('productos').select('*');
-  if (errProd) return console.error('Error cargando productos:', errProd);
+  if (errProd) console.error('Error cargando productos:', errProd);
 
   const { data: movimientos, error: errMov } = await _supabase
     .from('movimientos')
@@ -102,21 +102,22 @@ async function cargarDatos() {
 
   if (errMov) console.error('Error cargando movimientos:', errMov);
 
-  renderizarDashboard(productos || [], movimientos || []);
+  const { data: obras, error: errObras } = await _supabase.from('obras').select('*');
+  if (errObras) console.error('Error cargando obras:', errObras);
+
+  renderizarDashboard(productos || [], movimientos || [], obras || []);
   renderizarTablaInventario(productos || []);
   poblarSelectProductos(productos || []);
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
-  
-  // Carga e impresión de la lista de obras y actualización del KPI
-  cargarObras();
+  renderizarTablaObras(obras || []);
 }
 
 // ==========================================
-// 3. DASHBOARD Y KPIs ($ USD)
+// 3. DASHBOARD Y KPIs
 // ==========================================
-function renderizarDashboard(productos, movimientos) {
+function renderizarDashboard(productos, movimientos, obras) {
   document.getElementById('kpi-materiales').innerText = productos.length;
 
   const totalValor = productos.reduce((sum, p) => sum + (p.stock_actual * p.costo_unitario), 0);
@@ -127,6 +128,30 @@ function renderizarDashboard(productos, movimientos) {
 
   const agotados = productos.filter(p => p.stock_actual === 0);
   document.getElementById('kpi-agotados').innerText = agotados.length;
+
+  // KPI Y CUADRO DE OBRAS ACTIVAS
+  const obrasActivas = obras.filter(o => !o.estado || o.estado.toLowerCase() === 'activa');
+  const kpiObras = document.getElementById('kpi-obras-count');
+  if (kpiObras) kpiObras.innerText = obrasActivas.length;
+
+  const dashWorksContainer = document.getElementById('dash-works');
+  if (dashWorksContainer) {
+    if (obrasActivas.length === 0) {
+      dashWorksContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin obras activas registradas.</p>';
+    } else {
+      dashWorksContainer.innerHTML = obrasActivas.slice(0, 5).map(o => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
+          <div>
+            <strong style="font-size:0.85rem; color:var(--text-dark);">${o.direccion || o.nombre}</strong>
+            <div style="font-size:0.72rem; color:var(--text-muted);">${o.subdivision && o.subdivision !== 'N/A' ? o.subdivision : ''} ${o.county && o.county !== 'N/A' ? '• ' + o.county : ''}</div>
+          </div>
+          <div>
+            <span class="badge badge-in">${o.estado || 'Activa'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
 
   const ahora = new Date();
   const mesActual = ahora.getMonth();
@@ -218,9 +243,6 @@ function renderizarDashboard(productos, movimientos) {
       </div>
     `).join('');
   }
-
-  const dashWorksContainer = document.getElementById('dash-works');
-  dashWorksContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin obras activas registradas.</p>';
 }
 
 // ==========================================
@@ -500,7 +522,7 @@ function imprimirConduce() {
 }
 
 // ==========================================
-// 8. MÓDULO PROYECTOS / OBRAS (CORREGIDO)
+// 8. MÓDULO PROYECTOS / OBRAS
 // ==========================================
 async function registrarObra(e) {
   e.preventDefault();
@@ -543,50 +565,11 @@ async function registrarObra(e) {
   cargarDatos();
 }
 
-async function cargarObras() {
+function renderizarTablaObras(obras) {
   const tbody = document.getElementById('obras-table-body');
-  const dashWorksContainer = document.getElementById('dash-works');
-  
-  const { data: obras, error } = await _supabase
-    .from('obras')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error al cargar obras desde Supabase:', error);
-  }
-
-  // 1. Actualizar el contador del KPI "OBRAS ACTIVAS"
-  const kpiObras = document.getElementById('kpi-obras-count');
-  if (kpiObras) {
-    const activas = obras ? obras.filter(o => o.estado === 'Activa').length : 0;
-    kpiObras.innerText = activas;
-  }
-
-  // 2. Renderizar la lista en el cuadro "Obras activas" del Dashboard
-  if (dashWorksContainer) {
-    const obrasActivas = obras ? obras.filter(o => o.estado === 'Activa') : [];
-    if (obrasActivas.length === 0) {
-      dashWorksContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin obras activas registradas.</p>';
-    } else {
-      dashWorksContainer.innerHTML = obrasActivas.slice(0, 5).map(o => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
-          <div>
-            <strong style="font-size:0.85rem; color:var(--text-dark);">${o.direccion || o.nombre}</strong>
-            <div style="font-size:0.72rem; color:var(--text-muted);">${o.subdivision !== 'N/A' ? o.subdivision : ''} ${o.county !== 'N/A' ? '• ' + o.county : ''}</div>
-          </div>
-          <div>
-            <span class="badge badge-in">${o.estado || 'Activa'}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-  }
-
-  // 3. Renderizar la tabla principal en el módulo "Proyectos / Obras"
   if (!tbody) return;
 
-  if (error || !obras || obras.length === 0) {
+  if (!obras || obras.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No hay obras registradas.</td></tr>';
     return;
   }
@@ -605,6 +588,14 @@ async function cargarObras() {
       </td>
     </tr>
   `).join('');
+}
+
+async function eliminarObra(id) {
+  if (confirm('¿Desea eliminar esta obra del sistema?')) {
+    const { error } = await _supabase.from('obras').delete().eq('id', id);
+    if (error) alert('Error al eliminar obra: ' + error.message);
+    else cargarDatos();
+  }
 }
 
 // ==========================================
@@ -685,9 +676,6 @@ function switchTab(tabId) {
 
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
 }
-
-function openModal() { document.getElementById('modal-product').classList.add('open'); }
-function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
 
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
 function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
