@@ -243,16 +243,13 @@
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
-                <input type="text" id="cesta-obra" placeholder="Ej. 417 Liberty Circle" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-              </div>
-              <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Contratista / Recibe</label>
-                <input type="text" id="cesta-contratista" placeholder="Ej. Luis Michor" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-              </div>
-              <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Entregado Por (Despachador)</label>
-                <input type="text" id="cesta-entregado" placeholder="Nombre de quien despacha" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-              </div>
+               <select id="cesta-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+  <option value="">Seleccione Obra</option>
+</select>
+
+<select id="cesta-contratista" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+  <option value="">Seleccione Contratista</option>
+</select>
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 0.75rem; align-items: end; background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color);">
