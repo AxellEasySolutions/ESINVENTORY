@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const obraForm = document.getElementById('obra-form');
   if (obraForm) obraForm.addEventListener('submit', registrarObra);
+
+  const contractorForm = document.getElementById('contractor-form');
+  if (contractorForm) contractorForm.addEventListener('submit', registrarContratista);
 });
 
 // ==========================================
@@ -112,6 +115,7 @@ async function cargarDatos() {
   cargarHistorialCompras();
   cargarHistorialSalidas();
   renderizarTablaObras(obras || []);
+  cargarContratistas();
 }
 
 // ==========================================
@@ -599,7 +603,79 @@ async function eliminarObra(id) {
 }
 
 // ==========================================
-// 9. OPERACIONES GENERALES Y MODAL
+// 9. MÓDULO CONTRATISTAS
+// ==========================================
+async function registrarContratista(e) {
+  e.preventDefault();
+
+  const nuevoContratista = {
+    first_name: document.getElementById('cnt-first-name').value.trim(),
+    middle_name: document.getElementById('cnt-middle-name').value.trim(),
+    last_name: document.getElementById('cnt-last-name').value.trim(),
+    phone: document.getElementById('cnt-phone').value.trim(),
+    email: document.getElementById('cnt-email').value.trim(),
+    birth_date: document.getElementById('cnt-birth-date').value || null,
+    ssn: document.getElementById('cnt-ssn').value.trim(),
+    itin: document.getElementById('cnt-itin').value.trim(),
+    address: document.getElementById('cnt-address').value.trim(),
+    city: document.getElementById('cnt-city').value.trim(),
+    state: document.getElementById('cnt-state').value,
+    zip: document.getElementById('cnt-zip').value.trim(),
+    status: document.getElementById('cnt-status').value,
+    summary: document.getElementById('cnt-summary').value,
+    notify_on_updates: document.getElementById('cnt-notify').value.trim()
+  };
+
+  const { error } = await _supabase.from('contratistas').insert([nuevoContratista]);
+
+  if (error) {
+    return alert('Error saving contractor: ' + error.message);
+  }
+
+  alert('¡Contractor saved successfully!');
+  document.getElementById('contractor-form').reset();
+  cargarDatos();
+}
+
+async function cargarContratistas() {
+  const tbody = document.getElementById('contractors-table-body');
+  if (!tbody) return;
+
+  const { data: contratistas, error } = await _supabase
+    .from('contratistas')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error || !contratistas || contratistas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No contractors registered.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = contratistas.map(c => `
+    <tr>
+      <td><b>${c.first_name} ${c.middle_name || ''} ${c.last_name || ''}</b></td>
+      <td>${c.phone || 'N/A'}</td>
+      <td>${c.email || 'N/A'}</td>
+      <td>${c.ssn || c.itin || 'N/A'}</td>
+      <td>${c.address ? `${c.address}, ${c.city || ''}` : 'N/A'}</td>
+      <td><span class="badge badge-in">${c.status}</span></td>
+      <td>
+        <button onclick="eliminarContratista('${c.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function eliminarContratista(id) {
+  if (confirm('Are you sure you want to delete this contractor?')) {
+    const { error } = await _supabase.from('contratistas').delete().eq('id', id);
+    if (error) alert('Error deleting: ' + error.message);
+    else cargarDatos();
+  }
+}
+
+// ==========================================
+// 10. OPERACIONES GENERALES Y MODAL
 // ==========================================
 async function guardarProducto(e) {
   e.preventDefault();
@@ -677,5 +753,7 @@ function switchTab(tabId) {
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
 }
 
+function openModal() { document.getElementById('modal-product').classList.add('open'); }
+function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
 function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
