@@ -500,17 +500,26 @@ function imprimirConduce() {
 }
 
 // ==========================================
-// 8. MÓDULO PROYECTOS / OBRAS
+// 8. MÓDULO PROYECTOS / OBRAS (CORREGIDO)
 // ==========================================
 async function registrarObra(e) {
   e.preventDefault();
 
-  const direccion = document.getElementById('obra-direccion').value.trim();
-  const lote = document.getElementById('obra-lote').value.trim();
-  const fase = document.getElementById('obra-fase').value.trim();
-  const subdivision = document.getElementById('obra-subdivision').value.trim();
-  const zip = document.getElementById('obra-zip').value.trim();
-  const county = document.getElementById('obra-county').value.trim();
+  const direccionInput = document.getElementById('obra-direccion');
+  const loteInput = document.getElementById('obra-lote');
+  const faseInput = document.getElementById('obra-fase');
+  const subdivisionInput = document.getElementById('obra-subdivision');
+  const zipInput = document.getElementById('obra-zip');
+  const countyInput = document.getElementById('obra-county');
+
+  if (!direccionInput) return;
+
+  const direccion = direccionInput.value.trim();
+  const lote = loteInput ? loteInput.value.trim() : '';
+  const fase = faseInput ? faseInput.value.trim() : '';
+  const subdivision = subdivisionInput ? subdivisionInput.value.trim() : '';
+  const zip = zipInput ? zipInput.value.trim() : '';
+  const county = countyInput ? countyInput.value.trim() : '';
 
   const nuevaObra = {
     nombre: direccion,
@@ -526,7 +535,7 @@ async function registrarObra(e) {
   const { error } = await _supabase.from('obras').insert([nuevaObra]);
 
   if (error) {
-    return alert('Error al guardar la obra: ' + error.message);
+    return alert('Error al guardar la obra en Supabase: ' + error.message);
   }
 
   alert('¡Proyecto / Obra registrado con éxito!');
@@ -537,11 +546,17 @@ async function registrarObra(e) {
 async function cargarObras() {
   const tbody = document.getElementById('obras-table-body');
   
+  // Ordenar por created_at (columna nativa de Supabase)
   const { data: obras, error } = await _supabase
     .from('obras')
     .select('*')
-    .order('fecha_creacion', { ascending: false });
+    .order('created_at', { ascending: false });
 
+  if (error) {
+    console.error('Error al cargar obras desde Supabase:', error);
+  }
+
+  // Actualizar KPI de Obras Activas en el Dashboard
   const kpiObras = document.getElementById('kpi-obras-count');
   if (kpiObras) {
     const activas = obras ? obras.filter(o => o.estado === 'Activa').length : 0;
@@ -551,21 +566,21 @@ async function cargarObras() {
   if (!tbody) return;
 
   if (error || !obras || obras.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay obras registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No hay obras registradas.</td></tr>';
     return;
   }
 
   tbody.innerHTML = obras.map(o => `
     <tr>
-      <td><b>${o.direccion}</b></td>
-      <td>${o.lote}</td>
-      <td>${o.fase}</td>
-      <td>${o.subdivision}</td>
-      <td>${o.codigo_postal}</td>
-      <td>${o.county}</td>
-      <td><span class="badge badge-in">${o.estado}</span></td>
+      <td><b>${o.direccion || o.nombre || 'N/A'}</b></td>
+      <td>${o.lote || 'N/A'}</td>
+      <td>${o.fase || 'N/A'}</td>
+      <td>${o.subdivision || 'N/A'}</td>
+      <td>${o.codigo_postal || 'N/A'}</td>
+      <td>${o.county || 'N/A'}</td>
+      <td><span class="badge badge-in">${o.estado || 'Activa'}</span></td>
       <td>
-        <button onclick="eliminarObra('${o.id}')" style="color:red; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+        <button onclick="eliminarObra('${o.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
       </td>
     </tr>
   `).join('');
@@ -574,7 +589,7 @@ async function cargarObras() {
 async function eliminarObra(id) {
   if (confirm('¿Desea eliminar esta obra del sistema?')) {
     const { error } = await _supabase.from('obras').delete().eq('id', id);
-    if (error) alert('Error al eliminar: ' + error.message);
+    if (error) alert('Error al eliminar obra: ' + error.message);
     else cargarDatos();
   }
 }
