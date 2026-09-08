@@ -106,19 +106,23 @@ async function cargarDatos() {
 
   if (errMov) console.error('Error cargando movimientos:', errMov);
 
-  const { data: obras, error: errObras } = await _supabase.from('obras').select('*');
+  const { data: obras, error: errObras } = await _supabase.from('obras').select('*').order('direccion', { ascending: true });
   if (errObras) console.error('Error cargando obras:', errObras);
+
+  const { data: contratistas, error: errCnt } = await _supabase.from('contratistas').select('*').order('first_name', { ascending: true });
+  if (errCnt) console.error('Error cargando contratistas:', errCnt);
 
   renderizarDashboard(productos || [], movimientos || [], obras || []);
   renderizarTablaInventario(productos || []);
   poblarSelectProductos(productos || []);
+  poblarSelectObras(obras || []);
+  poblarSelectContratistas(contratistas || []);
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
   renderizarTablaObras(obras || []);
   cargarContratistas();
 }
-
 // ==========================================
 // 3. DASHBOARD Y KPIs
 // ==========================================
