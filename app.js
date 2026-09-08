@@ -555,6 +555,94 @@ function switchTab(tabId) {
 
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
 }
+// Listener para el formulario de Obras en DOMContentLoaded
+const obraForm = document.getElementById('obra-form');
+if (obraForm) {
+  obraForm.addEventListener('submit', registrarObra);
+}
+
+// 1. Guardar nueva Obra en Supabase
+async function registrarObra(e) {
+  e.preventDefault();
+
+  const direccion = document.getElementById('obra-direccion').value.trim();
+  const lote = document.getElementById('obra-lote').value.trim();
+  const fase = document.getElementById('obra-fase').value.trim();
+  const subdivision = document.getElementById('obra-subdivision').value.trim();
+  const zip = document.getElementById('obra-zip').value.trim();
+  const county = document.getElementById('obra-county').value.trim();
+
+  const nuevaObra = {
+    nombre: direccion,
+    direccion: direccion,
+    lote: lote || 'N/A',
+    fase: fase || 'N/A',
+    subdivision: subdivision || 'N/A',
+    codigo_postal: zip || 'N/A',
+    county: county || 'N/A',
+    estado: 'Activa'
+  };
+
+  const { error } = await _supabase.from('obras').insert([nuevaObra]);
+
+  if (error) {
+    return alert('Error al guardar la obra: ' + error.message);
+  }
+
+  alert('¡Proyecto / Obra registrado con éxito!');
+  document.getElementById('obra-form').reset();
+  cargarDatos();
+}
+
+// 2. Cargar e imprimir la lista de obras y actualizar los KPIs
+async function cargarObras() {
+  const tbody = document.getElementById('obras-table-body');
+  
+  const { data: obras, error } = await _supabase
+    .from('obras')
+    .select('*')
+    .order('fecha_creacion', { ascending: false });
+
+  // Actualizar KPI de Obras Activas en el Dashboard
+  const kpiObras = document.getElementById('kpi-obras-count');
+  if (kpiObras) {
+    const activas = obras ? obras.filter(o => o.estado === 'Activa').length : 0;
+    kpiObras.innerText = activas;
+  }
+
+  if (!tbody) return;
+
+  if (error || !obras || obras.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay obras registradas.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = obras.map(o => `
+    <tr>
+      <td><b>${o.direccion}</b></td>
+      <td>${o.lote}</td>
+      <td>${o.fase}</td>
+      <td>${o.subdivision}</td>
+      <td>${o.codigo_postal}</td>
+      <td>${o.county}</td>
+      <td><span class="badge badge-in">${o.estado}</span></td>
+      <td>
+        <button onclick="eliminarObra('${o.id}')" style="color:red; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 3. Eliminar Obra
+async function eliminarObra(id) {
+  if (confirm('¿Desea eliminar esta obra del sistema?')) {
+    const { error } = await _supabase.from('obras').delete().eq('id', id);
+    if (error) alert('Error al eliminar: ' + error.message);
+    else cargarDatos();
+  }
+}
+
+// Recuerda agregar la llamada cargarObras() dentro de tu función principal cargarDatos().
 
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
 function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
