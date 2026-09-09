@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const contractorForm = document.getElementById('contractor-form');
   if (contractorForm) contractorForm.addEventListener('submit', registrarContratista);
+
+  const providerForm = document.getElementById('provider-form');
+  if (providerForm) providerForm.addEventListener('submit', registrarProveedor);
 });
 
 // ==========================================
@@ -115,6 +118,10 @@ async function cargarDatos() {
   const { data: contratistas, error: errCnt } = await _supabase.from('contratistas').select('*');
   if (errCnt) console.error('Error cargando contratistas:', errCnt);
 
+  // 5. Cargar Proveedores
+  const { data: proveedores, error: errProv } = await _supabase.from('proveedores').select('*');
+  if (errProv) console.error('Error cargando proveedores:', errProv);
+
   // Renderizar vistas del Dashboard e Inventario
   renderizarDashboard(productos || [], movimientos || [], obras || []);
   renderizarTablaInventario(productos || []);
@@ -126,10 +133,12 @@ async function cargarDatos() {
   poblarSelectProductos(productos || []);
   poblarSelectObras(obras || []);
   poblarSelectContratistas(contratistas || []);
+  poblarSelectProveedores(proveedores || []);
 
   // Renderizar tablas de módulos
   renderizarTablaObras(obras || []);
   cargarContratistas(contratistas || []);
+  renderizarTablaProveedores(proveedores || []);
 }
 
 // ==========================================
@@ -339,7 +348,7 @@ async function eliminarProducto(id) {
 }
 
 // ==========================================
-// POBLAR SELECTS (DESPLEGABLES DINOÁMICOS)
+// POBLAR SELECTS (DESPLEGABLES DINÁMICOS)
 // ==========================================
 function poblarSelectProductos(productos) {
   const selectMov = document.getElementById('mov-producto');
@@ -379,6 +388,17 @@ function poblarSelectContratistas(contratistas) {
 
   if (selectSalidaCnt) selectSalidaCnt.innerHTML = options;
   if (selectCestaCnt) selectCestaCnt.innerHTML = options;
+}
+
+function poblarSelectProveedores(proveedores) {
+  const selectCompraProv = document.getElementById('compra-proveedor');
+  if (!selectCompraProv) return;
+
+  if (selectCompraProv.tagName === 'SELECT') {
+    const options = '<option value="">Seleccione Proveedor</option>' + 
+      proveedores.map(p => `<option value="${p.nombre_empresa}">${p.nombre_empresa}</option>`).join('');
+    selectCompraProv.innerHTML = options;
+  }
 }
 
 // ==========================================
@@ -822,7 +842,95 @@ async function eliminarContratista(id) {
 }
 
 // ==========================================
-// 10. MOVIMIENTOS Y NAVEGACIÓN TAB
+// 10. MÓDULO PROVEEDORES (CON EDICIÓN)
+// ==========================================
+async function registrarProveedor(e) {
+  e.preventDefault();
+  const id = document.getElementById('prov-id') ? document.getElementById('prov-id').value : null;
+
+  const provData = {
+    nombre_empresa: document.getElementById('prov-nombre').value.trim(),
+    contacto_principal: document.getElementById('prov-contacto').value.trim(),
+    tax_id: document.getElementById('prov-tax').value.trim(),
+    telefono: document.getElementById('prov-telefono').value.trim(),
+    email: document.getElementById('prov-email').value.trim(),
+    direccion: document.getElementById('prov-direccion').value.trim(),
+    categoria: document.getElementById('prov-categoria').value
+  };
+
+  let res;
+  if (id) {
+    res = await _supabase.from('proveedores').update(provData).eq('id', id);
+  } else {
+    res = await _supabase.from('proveedores').insert([provData]);
+  }
+
+  if (res.error) return alert('Error al guardar el proveedor: ' + res.error.message);
+
+  alert(id ? '¡Proveedor actualizado con éxito!' : '¡Proveedor guardado con éxito!');
+  document.getElementById('provider-form').reset();
+  if (document.getElementById('prov-id')) document.getElementById('prov-id').value = '';
+  cargarDatos();
+}
+
+function renderizarTablaProveedores(proveedores) {
+  const tbody = document.getElementById('providers-table-body');
+  if (!tbody) return;
+
+  if (!proveedores || proveedores.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No hay proveedores registrados.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = proveedores.map(p => `
+    <tr>
+      <td><b>${p.nombre_empresa}</b></td>
+      <td>${p.contacto_principal || 'N/A'}</td>
+      <td>${p.telefono || 'N/A'}</td>
+      <td>${p.email || 'N/A'}</td>
+      <td>${p.categoria || 'General'}</td>
+      <td>${p.tax_id || 'N/A'}</td>
+      <td>
+        <button onclick="prepararEdicionProveedor('${p.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right:0.5rem;">Editar</button>
+        <button onclick="eliminarProveedor('${p.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function prepararEdicionProveedor(id) {
+  const { data: p, error } = await _supabase.from('proveedores').select('*').eq('id', id).single();
+  if (error) return alert('Error al consultar proveedor');
+
+  if (!document.getElementById('prov-id')) {
+    const inputId = document.createElement('input');
+    inputId.type = 'hidden';
+    inputId.id = 'prov-id';
+    document.getElementById('provider-form').appendChild(inputId);
+  }
+
+  document.getElementById('prov-id').value = p.id;
+  document.getElementById('prov-nombre').value = p.nombre_empresa || '';
+  document.getElementById('prov-contacto').value = p.contacto_principal || '';
+  document.getElementById('prov-tax').value = p.tax_id || '';
+  document.getElementById('prov-telefono').value = p.telefono || '';
+  document.getElementById('prov-email').value = p.email || '';
+  document.getElementById('prov-direccion').value = p.direccion || '';
+  document.getElementById('prov-categoria').value = p.categoria || 'General';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function eliminarProveedor(id) {
+  if (confirm('¿Desea eliminar este proveedor?')) {
+    const { error } = await _supabase.from('proveedores').delete().eq('id', id);
+    if (error) alert('Error al eliminar proveedor: ' + error.message);
+    else cargarDatos();
+  }
+}
+
+// ==========================================
+// 11. MOVIMIENTOS Y NAVEGACIÓN TAB
 // ==========================================
 async function registrarMovimiento(e) {
   e.preventDefault();
@@ -878,5 +986,3 @@ function closeModal() {
   productoEditandoId = null;
   document.getElementById('product-form').reset();
 }
-function openModal() { document.getElementById('modal-product').classList.add('open'); }
-function closeModal() { document.getElementById('modal-product').classList.remove('open'); }
