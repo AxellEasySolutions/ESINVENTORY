@@ -82,6 +82,7 @@ function iniciarInterfaz() {
 
   aplicarPermisosRol();
   cargarDatos();
+  suscribirPresenciaEnVivo();
 }
 
 function aplicarPermisosRol() {
@@ -93,6 +94,71 @@ function aplicarPermisosRol() {
 
   const btnNuevoProd = document.getElementById('btn-nuevo-prod-header');
   if (btnNuevoProd) btnNuevoProd.style.display = esAdmin ? 'flex' : 'none';
+}
+
+// ==========================================
+// PRESENCIA EN TIEMPO REAL (USUARIOS ACTIVOS)
+// ==========================================
+function suscribirPresenciaEnVivo() {
+  if (!usuarioActual) return;
+
+  const channel = _supabase.channel('online-users', {
+    config: {
+      presence: { key: usuarioActual.email },
+    },
+  });
+
+  channel
+    .on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      renderizarUsuariosConectados(state);
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({
+          nombre: usuarioActual.nombre,
+          email: usuarioActual.email,
+          inicial: usuarioActual.nombre ? usuarioActual.nombre.charAt(0).toUpperCase() : 'U'
+        });
+      }
+    });
+}
+
+function renderizarUsuariosConectados(state) {
+  const container = document.getElementById('online-users-container');
+  if (!container) return;
+
+  const usuarios = [];
+  Object.values(state).forEach(presences => {
+    presences.forEach(p => usuarios.push(p));
+  });
+
+  const colores = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+  container.innerHTML = usuarios.map((u, idx) => {
+    const colorBg = colores[idx % colores.length];
+    return `
+      <div title="${u.nombre} (${u.email})" style="
+        width: 32px; 
+        height: 32px; 
+        border-radius: 50%; 
+        background: ${colorBg}; 
+        color: white; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 0.85rem; 
+        font-weight: 700; 
+        border: 2px solid #fff;
+        margin-left: -8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: transform 0.2s;
+      " onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+        ${u.inicial}
+      </div>
+    `;
+  }).join('');
 }
 
 // ==========================================
@@ -356,8 +422,10 @@ function poblarSelectProductos(productos) {
   const selectSalida = document.getElementById('salida-producto');
   const selectCesta = document.getElementById('cesta-producto-select');
 
+  const prodOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+
   const options = '<option value="">Seleccione Producto</option>' + 
-    productos.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('');
+    prodOrdenados.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('');
 
   if (selectMov) selectMov.innerHTML = options;
   if (selectCompra) selectCompra.innerHTML = options;
@@ -369,8 +437,14 @@ function poblarSelectObras(obras) {
   const selectSalidaObra = document.getElementById('salida-obra');
   const selectCestaObra = document.getElementById('cesta-obra');
 
+  const obrasOrdenadas = [...obras].sort((a, b) => {
+    const nomA = a.direccion || a.nombre || '';
+    const nomB = b.direccion || b.nombre || '';
+    return nomA.localeCompare(nomB);
+  });
+
   const options = '<option value="">Seleccione Obra</option>' + 
-    obras.map(o => `<option value="${o.direccion || o.nombre}">${o.direccion || o.nombre} ${o.lote && o.lote !== 'N/A' ? ' (' + o.lote + ')' : ''}</option>`).join('');
+    obrasOrdenadas.map(o => `<option value="${o.direccion || o.nombre}">${o.direccion || o.nombre} ${o.lote && o.lote !== 'N/A' ? ' (' + o.lote + ')' : ''}</option>`).join('');
 
   if (selectSalidaObra) selectSalidaObra.innerHTML = options;
   if (selectCestaObra) selectCestaObra.innerHTML = options;
@@ -380,9 +454,11 @@ function poblarSelectContratistas(contratistas) {
   const selectSalidaCnt = document.getElementById('salida-solicitante');
   const selectCestaCnt = document.getElementById('cesta-contratista');
 
+  const cntOrdenados = [...contratistas].sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
+
   const options = '<option value="">Seleccione Contratista</option>' + 
-    contratistas.map(c => {
-      const nombreCompleto = `${c.first_name} ${c.middle_name || ''} ${c.last_name || ''}`.trim();
+    cntOrdenados.map(c => {
+      const nombreCompleto = `${c.first_name || ''} ${c.middle_name || ''} ${c.last_name || ''}`.replace(/\s+/g, ' ').trim();
       return `<option value="${nombreCompleto}">${nombreCompleto} ${c.phone ? ' - ' + c.phone : ''}</option>`;
     }).join('');
 
@@ -394,9 +470,11 @@ function poblarSelectProveedores(proveedores) {
   const selectCompraProv = document.getElementById('compra-proveedor');
   if (!selectCompraProv) return;
 
+  const provOrdenados = [...proveedores].sort((a, b) => (a.nombre_empresa || '').localeCompare(b.nombre_empresa || ''));
+
   if (selectCompraProv.tagName === 'SELECT') {
     const options = '<option value="">Seleccione Proveedor</option>' + 
-      proveedores.map(p => `<option value="${p.nombre_empresa}">${p.nombre_empresa}</option>`).join('');
+      provOrdenados.map(p => `<option value="${p.nombre_empresa}">${p.nombre_empresa}</option>`).join('');
     selectCompraProv.innerHTML = options;
   }
 }
@@ -984,5 +1062,7 @@ function openModal() { document.getElementById('modal-product').classList.add('o
 function closeModal() { 
   document.getElementById('modal-product').classList.remove('open'); 
   productoEditandoId = null;
+  document.getElementById('product-form').reset();
+}
   document.getElementById('product-form').reset();
 }
