@@ -78,7 +78,12 @@ function iniciarInterfaz() {
   document.getElementById('login-screen').style.display = 'none';
   
   const badge = document.getElementById('user-badge');
-  badge.innerText = `${usuarioActual.nombre} (${usuarioActual.rol === 'ADMIN' ? 'Admin' : 'Gerente Obra'})`;
+  if (badge) badge.innerText = `${usuarioActual.nombre} (${usuarioActual.rol === 'ADMIN' ? 'Admin' : 'Gerente Obra'})`;
+
+  const elName = document.getElementById('dropdown-user-name');
+  const elRole = document.getElementById('dropdown-user-role');
+  if (elName) elName.innerText = usuarioActual.nombre;
+  if (elRole) elRole.innerText = usuarioActual.rol === 'ADMIN' ? 'Administrador' : 'Gerente de Obra';
 
   aplicarPermisosRol();
   cargarDatos();
@@ -94,6 +99,74 @@ function aplicarPermisosRol() {
 
   const btnNuevoProd = document.getElementById('btn-nuevo-prod-header');
   if (btnNuevoProd) btnNuevoProd.style.display = esAdmin ? 'flex' : 'none';
+}
+
+// ==========================================
+// GESTIÓN DE PERFIL, MENU Y CONTRASEÑA
+// ==========================================
+function toggleUserDropdown() {
+  const menu = document.getElementById('user-dropdown-menu');
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('user-menu-btn');
+  const menu = document.getElementById('user-dropdown-menu');
+  if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+function openChangePasswordModal() {
+  const menu = document.getElementById('user-dropdown-menu');
+  if (menu) menu.style.display = 'none';
+  const modal = document.getElementById('modal-change-password');
+  if (modal) modal.classList.add('open');
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById('modal-change-password');
+  if (modal) modal.classList.remove('open');
+  const form = document.getElementById('change-password-form');
+  if (form) form.reset();
+}
+
+async function guardarNuevaContrasena(e) {
+  e.preventDefault();
+
+  if (!usuarioActual) return alert('No hay una sesión activa.');
+
+  const passActual = document.getElementById('pass-actual').value.trim();
+  const passNueva = document.getElementById('pass-nueva').value.trim();
+  const passConfirmar = document.getElementById('pass-confirmar').value.trim();
+
+  if (passActual !== usuarioActual.password) {
+    return alert('La contraseña actual ingresada es incorrecta.');
+  }
+
+  if (passNueva.length < 6) {
+    return alert('La nueva contraseña debe tener al menos 6 caracteres.');
+  }
+
+  if (passNueva !== passConfirmar) {
+    return alert('La nueva contraseña y su confirmación no coinciden.');
+  }
+
+  const { error } = await _supabase
+    .from('usuarios')
+    .update({ password: passNueva })
+    .eq('id', usuarioActual.id);
+
+  if (error) {
+    return alert('Error al actualizar la contraseña: ' + error.message);
+  }
+
+  usuarioActual.password = passNueva;
+  localStorage.setItem('sesion_usuario', JSON.stringify(usuarioActual));
+
+  alert('¡Contraseña actualizada con éxito!');
+  closeChangePasswordModal();
 }
 
 // ==========================================
@@ -165,43 +238,35 @@ function renderizarUsuariosConectados(state) {
 // 2. CARGA GENERAL DE DATOS
 // ==========================================
 async function cargarDatos() {
-  // 1. Cargar Productos
   const { data: productos, error: errProd } = await _supabase.from('productos').select('*');
   if (errProd) console.error('Error cargando productos:', errProd);
 
-  // 2. Cargar Movimientos
   const { data: movimientos, error: errMov } = await _supabase
     .from('movimientos')
     .select('*, productos(nombre, costo_unitario)')
     .order('fecha', { ascending: false });
   if (errMov) console.error('Error cargando movimientos:', errMov);
 
-  // 3. Cargar Obras
   const { data: obras, error: errObras } = await _supabase.from('obras').select('*');
   if (errObras) console.error('Error cargando obras:', errObras);
 
-  // 4. Cargar Contratistas
   const { data: contratistas, error: errCnt } = await _supabase.from('contratistas').select('*');
   if (errCnt) console.error('Error cargando contratistas:', errCnt);
 
-  // 5. Cargar Proveedores
   const { data: proveedores, error: errProv } = await _supabase.from('proveedores').select('*');
   if (errProv) console.error('Error cargando proveedores:', errProv);
 
-  // Renderizar vistas del Dashboard e Inventario
   renderizarDashboard(productos || [], movimientos || [], obras || []);
   renderizarTablaInventario(productos || []);
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
   
-  // Poblar desplegables (Selects)
   poblarSelectProductos(productos || []);
   poblarSelectObras(obras || []);
   poblarSelectContratistas(contratistas || []);
   poblarSelectProveedores(proveedores || []);
 
-  // Renderizar tablas de módulos
   renderizarTablaObras(obras || []);
   cargarContratistas(contratistas || []);
   renderizarTablaProveedores(proveedores || []);
@@ -222,7 +287,6 @@ function renderizarDashboard(productos, movimientos, obras) {
   const agotados = productos.filter(p => p.stock_actual === 0);
   document.getElementById('kpi-agotados').innerText = agotados.length;
 
-  // KPI Y CUADRO DE OBRAS ACTIVAS
   const obrasActivas = obras.filter(o => !o.estado || o.estado.toLowerCase() === 'activa');
   const kpiObras = document.getElementById('kpi-obras-count');
   if (kpiObras) kpiObras.innerText = obrasActivas.length;
@@ -345,7 +409,7 @@ function renderizarTablaInventario(productos) {
   const tbody = document.getElementById('inventory-table-body');
   if (!tbody) return;
   if (productos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos registrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay productos registrados.</td></tr>';
     return;
   }
   tbody.innerHTML = productos.map(p => `
@@ -355,6 +419,7 @@ function renderizarTablaInventario(productos) {
       <td>${p.categoria}</td>
       <td style="color:${p.stock_actual <= p.stock_minimo ? 'red' : 'inherit'}; font-weight:bold;">${p.stock_actual}</td>
       <td>$${p.costo_unitario.toFixed(2)}</td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${p.updated_by || 'Sistema'}</span></td>
       <td>
         <button onclick="prepararEdicionProducto('${p.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right: 0.5rem;">Editar</button>
         <button onclick="eliminarProducto('${p.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
@@ -386,7 +451,8 @@ async function guardarProducto(e) {
     categoria: document.getElementById('prod-categoria').value,
     stock_actual: Number(document.getElementById('prod-stock').value),
     stock_minimo: Number(document.getElementById('prod-min').value),
-    costo_unitario: Number(document.getElementById('prod-costo').value)
+    costo_unitario: Number(document.getElementById('prod-costo').value),
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   };
 
   let res;
@@ -522,7 +588,8 @@ async function registrarCompra(e) {
     estado_pago: estadoPago,
     codigo_lote: codigoLote,
     vencimiento_producto: vencProd,
-    notas
+    notas,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   }]);
 
   if (errCompra) return alert('Error al registrar la compra: ' + errCompra.message);
@@ -531,12 +598,14 @@ async function registrarCompra(e) {
     producto_id: prodId,
     tipo: 'ENTRADA',
     cantidad,
-    concepto: `Compra Factura: ${factura} (${proveedor})`
+    concepto: `Compra Factura: ${factura} (${proveedor})`,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   }]);
 
   await _supabase.from('productos').update({ 
     stock_actual: nuevoStock,
-    costo_unitario: costoUnitario 
+    costo_unitario: costoUnitario,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   }).eq('id', prodId);
 
   alert('¡Compra registrada con éxito!');
@@ -558,7 +627,7 @@ async function cargarHistorialCompras() {
     .order('fecha', { ascending: false });
 
   if (error || !compras || compras.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay compras registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No hay compras registradas.</td></tr>';
     return;
   }
 
@@ -572,6 +641,7 @@ async function cargarHistorialCompras() {
       <td>$${Number(c.costo_unitario).toFixed(2)}</td>
       <td><b>$${Number(c.total).toFixed(2)}</b></td>
       <td><span class="badge ${c.estado_pago === 'Pagada' ? 'badge-in' : 'badge-out'}">${c.estado_pago}</span></td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${c.updated_by || 'Sistema'}</span></td>
     </tr>
   `).join('');
 }
@@ -602,7 +672,8 @@ async function registrarSalidaModule(e) {
     obra_destino: obra,
     solicitante,
     cantidad,
-    motivo
+    motivo,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   }]);
 
   if (errSalida) return alert('Error al registrar la salida: ' + errSalida.message);
@@ -611,10 +682,14 @@ async function registrarSalidaModule(e) {
     producto_id: prodId,
     tipo: 'SALIDA',
     cantidad,
-    concepto: `Entrega a: ${obra} (Recibe: ${solicitante})`
+    concepto: `Entrega a: ${obra} (Recibe: ${solicitante})`,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   }]);
 
-  await _supabase.from('productos').update({ stock_actual: nuevoStock }).eq('id', prodId);
+  await _supabase.from('productos').update({ 
+    stock_actual: nuevoStock,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
+  }).eq('id', prodId);
 
   alert('¡Salida registrada con éxito!');
   document.getElementById('dispatch-form').reset();
@@ -631,7 +706,7 @@ async function cargarHistorialSalidas() {
     .order('fecha', { ascending: false });
 
   if (error || !salidas || salidas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay salidas registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay salidas registradas.</td></tr>';
     return;
   }
 
@@ -643,6 +718,7 @@ async function cargarHistorialSalidas() {
       <td>${s.solicitante}</td>
       <td style="color:#ef4444; font-weight:bold;">-${s.cantidad}</td>
       <td>${s.motivo}</td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${s.updated_by || 'Sistema'}</span></td>
     </tr>
   `).join('');
 }
@@ -707,7 +783,7 @@ function imprimirConduce() {
 
   const obra = document.getElementById('cesta-obra').value || 'N/A';
   const contratista = document.getElementById('cesta-contratista').value || 'N/A';
-  const entregado = document.getElementById('cesta-entregado').value || 'N/A';
+  const entregado = document.getElementById('cesta-entregado').value || (usuarioActual ? usuarioActual.nombre : 'N/A');
   const fechaActual = new Date().toLocaleDateString('es-NI');
 
   document.getElementById('print-obra').innerText = obra;
@@ -734,7 +810,8 @@ async function registrarObra(e) {
     subdivision: document.getElementById('obra-subdivision').value.trim() || 'N/A',
     codigo_postal: document.getElementById('obra-zip').value.trim() || 'N/A',
     county: document.getElementById('obra-county').value.trim() || 'N/A',
-    estado: 'Activa'
+    estado: 'Activa',
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   };
 
   let res;
@@ -757,7 +834,7 @@ function renderizarTablaObras(obras) {
   if (!tbody) return;
 
   if (!obras || obras.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No hay obras registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">No hay obras registradas.</td></tr>';
     return;
   }
 
@@ -770,6 +847,7 @@ function renderizarTablaObras(obras) {
       <td>${o.codigo_postal || 'N/A'}</td>
       <td>${o.county || 'N/A'}</td>
       <td><span class="badge badge-in">${o.estado || 'Activa'}</span></td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${o.updated_by || 'Sistema'}</span></td>
       <td>
         <button onclick="prepararEdicionObra('${o.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right: 0.5rem;">Editar</button>
         <button onclick="eliminarObra('${o.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
@@ -830,7 +908,8 @@ async function registrarContratista(e) {
     zip: document.getElementById('cnt-zip').value.trim(),
     status: document.getElementById('cnt-status').value,
     summary: document.getElementById('cnt-summary').value,
-    notify_on_updates: document.getElementById('cnt-notify').value.trim()
+    notify_on_updates: document.getElementById('cnt-notify').value.trim(),
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   };
 
   let res;
@@ -860,7 +939,7 @@ async function cargarContratistas(contratistasList) {
   }
 
   if (!contratistas || contratistas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No contractors registered.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No contractors registered.</td></tr>';
     return;
   }
 
@@ -872,6 +951,7 @@ async function cargarContratistas(contratistasList) {
       <td>${c.ssn || c.itin || 'N/A'}</td>
       <td>${c.address ? `${c.address}, ${c.city || ''}` : 'N/A'}</td>
       <td><span class="badge badge-in">${c.status || 'Active Contractor'}</span></td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${c.updated_by || 'Sistema'}</span></td>
       <td>
         <button onclick="prepararEdicionContratista('${c.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right:0.5rem;">Edit</button>
         <button onclick="eliminarContratista('${c.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Delete</button>
@@ -933,7 +1013,8 @@ async function registrarProveedor(e) {
     telefono: document.getElementById('prov-telefono').value.trim(),
     email: document.getElementById('prov-email').value.trim(),
     direccion: document.getElementById('prov-direccion').value.trim(),
-    categoria: document.getElementById('prov-categoria').value
+    categoria: document.getElementById('prov-categoria').value,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
   };
 
   let res;
@@ -956,7 +1037,7 @@ function renderizarTablaProveedores(proveedores) {
   if (!tbody) return;
 
   if (!proveedores || proveedores.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No hay proveedores registrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No hay proveedores registrados.</td></tr>';
     return;
   }
 
@@ -968,6 +1049,7 @@ function renderizarTablaProveedores(proveedores) {
       <td>${p.email || 'N/A'}</td>
       <td>${p.categoria || 'General'}</td>
       <td>${p.tax_id || 'N/A'}</td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${p.updated_by || 'Sistema'}</span></td>
       <td>
         <button onclick="prepararEdicionProveedor('${p.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right:0.5rem;">Editar</button>
         <button onclick="eliminarProveedor('${p.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
@@ -1023,8 +1105,17 @@ async function registrarMovimiento(e) {
   const nuevoStock = tipo === 'ENTRADA' ? prod.stock_actual + cantidad : prod.stock_actual - cantidad;
   if (nuevoStock < 0) return alert('Error: Stock insuficiente para realizar esta salida');
 
-  await _supabase.from('movimientos').insert([{ producto_id: prodId, tipo, cantidad, concepto }]);
-  await _supabase.from('productos').update({ stock_actual: nuevoStock }).eq('id', prodId);
+  await _supabase.from('movimientos').insert([{ 
+    producto_id: prodId, 
+    tipo, 
+    cantidad, 
+    concepto,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema' 
+  }]);
+  await _supabase.from('productos').update({ 
+    stock_actual: nuevoStock,
+    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema' 
+  }).eq('id', prodId);
 
   document.getElementById('movement-form').reset();
   cargarDatos();
@@ -1034,7 +1125,7 @@ async function renderizarMovimientos(movimientos) {
   const tbody = document.getElementById('movements-table-body');
   if (!tbody) return;
   if (movimientos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay movimientos registrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay movimientos registrados.</td></tr>';
     return;
   }
   tbody.innerHTML = movimientos.map(m => `
@@ -1044,6 +1135,7 @@ async function renderizarMovimientos(movimientos) {
       <td><span class="badge ${m.tipo === 'ENTRADA' ? 'badge-in' : 'badge-out'}">${m.tipo}</span></td>
       <td>${m.cantidad}</td>
       <td>${m.concepto}</td>
+      <td><span style="font-size:0.8rem; color:var(--text-muted);">${m.updated_by || 'Sistema'}</span></td>
     </tr>
   `).join('');
 }
@@ -1064,4 +1156,3 @@ function closeModal() {
   productoEditandoId = null;
   document.getElementById('product-form').reset();
 }
- 
