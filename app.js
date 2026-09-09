@@ -482,7 +482,7 @@ async function eliminarProducto(id) {
 }
 
 // ==========================================
-// POBLAR SELECTS (DESPLEGABLES DINÁMICOS)
+// POBLAR SELECTS (DESPLEGABLES DINÁMICOS Y FILTRADOS)
 // ==========================================
 function poblarSelectProductos(productos) {
   const selectMov = document.getElementById('mov-producto');
@@ -493,14 +493,20 @@ function poblarSelectProductos(productos) {
 
   const prodOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-  const options = '<option value="">Seleccione Producto</option>' + 
+  // Opción general para Compras y Movimientos (Muestra todo el catálogo)
+  const optionsTodas = '<option value="">Seleccione Producto</option>' + 
     prodOrdenados.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('');
 
-  if (selectMov) selectMov.innerHTML = options;
-  if (selectCompra) selectCompra.innerHTML = options;
-  if (selectSalida) selectSalida.innerHTML = options;
-  if (selectCesta) selectCesta.innerHTML = options;
-  if (selectReq) selectReq.innerHTML = options;
+  // Opción filtrada para Salidas, Cesta y Requests (SOLO STOCK > 0)
+  const prodDisponibles = prodOrdenados.filter(p => p.stock_actual > 0);
+  const optionsSoloDisponibles = '<option value="">Seleccione Producto</option>' + 
+    prodDisponibles.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}" data-stock="${p.stock_actual}">${p.nombre} (Disponible: ${p.stock_actual})</option>`).join('');
+
+  if (selectMov) selectMov.innerHTML = optionsTodas;
+  if (selectCompra) selectCompra.innerHTML = optionsTodas;
+  if (selectSalida) selectSalida.innerHTML = optionsSoloDisponibles;
+  if (selectCesta) selectCesta.innerHTML = optionsSoloDisponibles;
+  if (selectReq) selectReq.innerHTML = optionsSoloDisponibles;
 }
 
 function poblarSelectObras(obras) {
@@ -1098,28 +1104,39 @@ async function eliminarProveedor(id) {
 }
 
 // ==========================================
-// 11. MÓDULO REQUESTS / SOLICITUDES
+// 11. MÓDULO REQUESTS / SOLICITUDES CON RESERVA Y FILTRO
 // ==========================================
 function agregarItemRequest() {
   const select = document.getElementById('req-producto-select');
   const prodId = select.value;
-  const cantidad = Number(document.getElementById('req-cantidad-input').value) || 1;
+  const cantidadInput = document.getElementById('req-cantidad-input');
+  const cantidad = Number(cantidadInput.value) || 0;
 
-  if (!prodId) return alert('Seleccione un producto de la lista.');
+  if (!prodId) return alert('Por favor seleccione un producto de la lista.');
+  if (cantidad <= 0) return alert('Ingrese una cantidad válida mayor a 0.');
 
   const option = select.options[select.selectedIndex];
+  const stockDisponible = Number(option.getAttribute('data-stock')) || 0;
   const sku = option.getAttribute('data-sku');
   const nombre = option.getAttribute('data-nombre');
   const categoria = option.getAttribute('data-cat');
+
+  // Validar si ya hay acumulados en la lista temporal del formulario
+  const acumuladoPrevio = listaRequestTemp.filter(i => i.producto_id === prodId).reduce((sum, i) => sum + i.cantidad, 0);
+  const totalSolicitado = acumuladoPrevio + cantidad;
+
+  if (totalSolicitado > stockDisponible) {
+    return alert(`Error: Stock insuficiente. Tienes ${stockDisponible} un. disponibles e intentas solicitar un total de ${totalSolicitado} un.`);
+  }
 
   const existe = listaRequestTemp.find(item => item.producto_id === prodId);
   if (existe) {
     existe.cantidad += cantidad;
   } else {
-    listaRequestTemp.push({ producto_id: prodId, sku, nombre, categoria, cantidad });
+    listaRequestTemp.push({ producto_id: prodId, sku, nombre, categoria, cantidad, stockDisponible });
   }
 
-  document.getElementById('req-cantidad-input').value = '';
+  cantidadInput.value = '';
   renderizarTablaRequestTemp();
 }
 
@@ -1150,6 +1167,7 @@ function renderizarTablaRequestTemp() {
   `).join('');
 }
 
+// RESERVA INMEDIATA AL CREAR EL REQUEST
 async function guardarRequest() {
   const obra = document.getElementById('req-obra').value;
   const contratista = document.getElementById('req-contratista').value;
@@ -1158,6 +1176,7 @@ async function guardarRequest() {
   if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
   if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
 
+  // 1. Insertar la solicitud principal
   const { data: req, error: errReq } = await _supabase.from('requests').insert([{
     obra_destino: obra,
     solicitante: contratista,
@@ -1168,22 +1187,31 @@ async function guardarRequest() {
 
   if (errReq) return alert('Error al crear la solicitud: ' + errReq.message);
 
-  const itemsParaInsertar = listaRequestTemp.map(item => ({
-    request_id: req.id,
-    producto_id: item.producto_id,
-    cantidad: item.cantidad
-  }));
+  // 2. Descontar inmediatamente el stock en BD (Reservar) y registrar items
+  for (const item of listaRequestTemp) {
+    await _supabase.from('request_items').insert([{
+      request_id: req.id,
+      producto_id: item.producto_id,
+      cantidad: item.cantidad
+    }]);
 
-  const { error: errItems } = await _supabase.from('request_items').insert(itemsParaInsertar);
-  if (errItems) return alert('Error al registrar ítems: ' + errItems.message);
+    const { data: prod } = await _supabase.from('productos').select('stock_actual').eq('id', item.producto_id).single();
+    if (prod) {
+      const nuevoStock = Math.max(0, prod.stock_actual - item.cantidad);
+      await _supabase.from('productos').update({
+        stock_actual: nuevoStock,
+        updated_by: usuarioActual ? usuarioActual.nombre : 'WFH User'
+      }).eq('id', item.producto_id);
+    }
+  }
 
-  alert('¡Request creado con éxito!');
+  alert('¡Request creado con éxito! Los materiales se han reservado del inventario.');
   listaRequestTemp = [];
   renderizarTablaRequestTemp();
   document.getElementById('req-obra').value = '';
   document.getElementById('req-contratista').value = '';
   document.getElementById('req-notas').value = '';
-  cargarHistorialRequests();
+  cargarDatos();
 }
 
 async function cargarHistorialRequests() {
@@ -1203,6 +1231,11 @@ async function cargarHistorialRequests() {
   tbody.innerHTML = requests.map(r => {
     const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>');
     const esPendiente = r.estado === 'Pendiente';
+    const esCancelado = r.estado === 'Cancelado';
+
+    let badgeClass = 'badge-in';
+    if (esPendiente) badgeClass = 'badge-out';
+    if (esCancelado) badgeClass = 'border-red';
 
     return `
       <tr>
@@ -1211,23 +1244,33 @@ async function cargarHistorialRequests() {
         <td>${r.solicitante}</td>
         <td style="font-size:0.82rem;">${resumenMateriales}</td>
         <td>
-          <span class="badge ${esPendiente ? 'badge-out' : 'badge-in'}">${r.estado}</span>
+          <span class="badge ${badgeClass}" style="${esCancelado ? 'color:#ef4444; border:1px solid #ef4444; background:#fef2f2;' : ''}">${r.estado}</span>
         </td>
         <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
         <td>
           ${esPendiente ? `
-            <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.75rem; font-size:0.75rem; background:var(--header-green);">
-              Despachar / Procesar Salida
-            </button>
-          ` : `<span style="font-size:0.75rem; color:var(--text-muted);">Despachado por: ${r.despachado_por || 'Sistema'}</span>`}
+            <div style="display:flex; gap:0.4rem;">
+              <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
+                Despachar
+              </button>
+              <button onclick="cancelarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">
+                Cancelar
+              </button>
+            </div>
+          ` : `
+            <span style="font-size:0.75rem; color:var(--text-muted);">
+              ${r.estado === 'Completado' ? 'Despachado por: ' + (r.despachado_por || 'Sistema') : 'Solicitud Cancelada'}
+            </span>
+          `}
         </td>
       </tr>
     `;
   }).join('');
 }
 
+// APROBACIÓN DEFINITIVA Y REGISTRO EN SALIDAS / KARDEX
 async function despacharRequest(requestId) {
-  if (!confirm('¿Confirmas que deseas despachar este Request y descontar los materiales del inventario?')) return;
+  if (!confirm('¿Confirmas que deseas despachar este Request y formalizar la entrega?')) return;
 
   const { data: req, error: errReq } = await _supabase
     .from('requests')
@@ -1238,8 +1281,7 @@ async function despacharRequest(requestId) {
   if (errReq || !req) return alert('Error al cargar datos de la solicitud');
 
   for (const item of req.request_items) {
-    const nuevoStock = (item.productos?.stock_actual || 0) - item.cantidad;
-
+    // Registrar Salida Oficial
     await _supabase.from('salidas').insert([{
       producto_id: item.producto_id,
       obra_destino: req.obra_destino,
@@ -1249,6 +1291,7 @@ async function despacharRequest(requestId) {
       updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
     }]);
 
+    // Registrar en Movimientos / Kardex
     await _supabase.from('movimientos').insert([{
       producto_id: item.producto_id,
       tipo: 'SALIDA',
@@ -1256,20 +1299,50 @@ async function despacharRequest(requestId) {
       concepto: `Despacho de Request a: ${req.obra_destino}`,
       updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
     }]);
-
-    await _supabase.from('productos').update({
-      stock_actual: Math.max(0, nuevoStock),
-      updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
-    }).eq('id', item.producto_id);
   }
 
+  // Actualizar Estado a Completado
   await _supabase.from('requests').update({
     estado: 'Completado',
     despachado_por: usuarioActual ? usuarioActual.nombre : 'Gerente Obra',
     fecha_despacho: new Date()
   }).eq('id', requestId);
 
-  alert('¡Request despachado con éxito! Se han descontado los materiales del inventario y registrado la salida.');
+  alert('¡Request despachado! Se ha formalizado el registro en Salidas e Historial.');
+  cargarDatos();
+}
+
+// CANCELACIÓN DE REQUEST Y DEVOLUCIÓN AUTOMÁTICA DE STOCK
+async function cancelarRequest(requestId) {
+  if (!confirm('¿Seguro que deseas cancelar este Request? Los materiales reservados regresarán automáticamente al inventario.')) return;
+
+  const { data: req, error: errReq } = await _supabase
+    .from('requests')
+    .select('*, request_items(*)')
+    .eq('id', requestId)
+    .single();
+
+  if (errReq || !req) return alert('Error al cargar la solicitud');
+
+  // Reintegrar stock a cada producto
+  for (const item of req.request_items) {
+    const { data: prod } = await _supabase.from('productos').select('stock_actual').eq('id', item.producto_id).single();
+    if (prod) {
+      const stockDevuelto = prod.stock_actual + item.cantidad;
+      await _supabase.from('productos').update({
+        stock_actual: stockDevuelto,
+        updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
+      }).eq('id', item.producto_id);
+    }
+  }
+
+  // Actualizar estado a Cancelado
+  await _supabase.from('requests').update({
+    estado: 'Cancelado',
+    despachado_por: usuarioActual ? usuarioActual.nombre : 'Sistema'
+  }).eq('id', requestId);
+
+  alert('Request cancelado. Los materiales se han devuelto al inventario.');
   cargarDatos();
 }
 
