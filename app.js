@@ -1064,5 +1064,4 @@ function closeModal() {
   productoEditandoId = null;
   document.getElementById('product-form').reset();
 }
-  document.getElementById('product-form').reset();
-}
+ 
