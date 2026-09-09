@@ -38,6 +38,9 @@
   <header class="topbar">
     <h1>Easy Solutions - Sistema de Inventario</h1>
     <div style="display: flex; align-items: center; gap: 1rem;">
+      <!-- INDICADOR DE USUARIOS EN VIVO (PRESENCE) -->
+      <div id="online-users-container" style="display: flex; align-items: center; gap: -0.3rem;"></div>
+      
       <span id="user-badge" style="font-size: 0.8rem; background: rgba(255,255,255,0.15); padding: 0.3rem 0.75rem; border-radius: 20px;">--</span>
       <button class="btn-primary" id="btn-nuevo-prod-header" onclick="openModal()"><i data-lucide="plus"></i> Nuevo Producto</button>
     </div>
