@@ -408,17 +408,17 @@ function renderizarDashboard(productos, movimientos, obras) {
 function renderizarTablaInventario(productos) {
   const tbody = document.getElementById('inventory-table-body');
   if (!tbody) return;
-  if (productos.length === 0) {
+  if (!productos || productos.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay productos registrados.</td></tr>';
     return;
   }
   tbody.innerHTML = productos.map(p => `
     <tr>
-      <td><b>${p.sku}</b></td>
-      <td>${p.nombre}</td>
-      <td>${p.categoria}</td>
-      <td style="color:${p.stock_actual <= p.stock_minimo ? 'red' : 'inherit'}; font-weight:bold;">${p.stock_actual}</td>
-      <td>$${p.costo_unitario.toFixed(2)}</td>
+      <td><b>${p.sku || ''}</b></td>
+      <td>${p.nombre || ''}</td>
+      <td>${p.categoria || ''}</td>
+      <td style="color:${p.stock_actual <= p.stock_minimo ? 'red' : 'inherit'}; font-weight:bold;">${p.stock_actual ?? 0}</td>
+      <td>$${Number(p.costo_unitario || 0).toFixed(2)}</td>
       <td><span style="font-size:0.8rem; color:var(--text-muted);">${p.updated_by || 'Sistema'}</span></td>
       <td>
         <button onclick="prepararEdicionProducto('${p.id}')" style="color:var(--primary-blue); border:none; background:none; cursor:pointer; font-weight:600; margin-right: 0.5rem;">Editar</button>
