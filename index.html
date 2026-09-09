@@ -90,8 +90,7 @@
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Proveedores</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('vencimientos')"><i data-lucide="calendar"></i> Lotes y Vencimientos</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('movimientos')"><i data-lucide="arrow-left-right"></i> Kardex</button>
-        <!-- APARTADO MÓDULO REQUESTS -->
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('etiquetas')"><i data-lucide="clipboard-list"></i> Requests / Solicitudes</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('etiquetas')"><i data-lucide="tag"></i> Etiquetas</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('reportes')"><i data-lucide="bar-chart-3"></i> Reportes</button>
       </nav>
 
@@ -364,7 +363,7 @@
         </div>
       </section>
 
-      <!-- ENTRADAS / COMPRAS CON DROPDOWN DE PROVEEDOR -->
+      <!-- ENTRADAS / COMPRAS CON DROPDOWNS -->
       <section id="tab-compras" class="tab-content">
         <div class="form-card">
           <h3>Registrar Compra de Material (Entrada)</h3>
@@ -970,6 +969,9 @@
       </form>
     </div>
   </div>
+
+  <!-- CONTENEDOR DE NOTIFICACIONES FLOTANTES PERSISTENTES (TOAST) -->
+  <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
   <script src="app.js"></script>
 </body>
