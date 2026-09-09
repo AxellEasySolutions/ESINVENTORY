@@ -5,6 +5,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let cestaMateriales = [];
+let listaRequestTemp = [];
 let usuarioActual = null;
 let productoEditandoId = null;
 
@@ -102,7 +103,7 @@ function aplicarPermisosRol() {
 }
 
 // ==========================================
-// GESTIÓN DE PERFIL, MENU Y CONTRASEÑA
+// GESTIÓN DE PERFIL, MENÚ Y CONTRASEÑA
 // ==========================================
 function toggleUserDropdown() {
   const menu = document.getElementById('user-dropdown-menu');
@@ -261,6 +262,7 @@ async function cargarDatos() {
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
+  cargarHistorialRequests();
   
   poblarSelectProductos(productos || []);
   poblarSelectObras(obras || []);
@@ -487,6 +489,7 @@ function poblarSelectProductos(productos) {
   const selectCompra = document.getElementById('compra-producto');
   const selectSalida = document.getElementById('salida-producto');
   const selectCesta = document.getElementById('cesta-producto-select');
+  const selectReq = document.getElementById('req-producto-select');
 
   const prodOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
@@ -497,11 +500,13 @@ function poblarSelectProductos(productos) {
   if (selectCompra) selectCompra.innerHTML = options;
   if (selectSalida) selectSalida.innerHTML = options;
   if (selectCesta) selectCesta.innerHTML = options;
+  if (selectReq) selectReq.innerHTML = options;
 }
 
 function poblarSelectObras(obras) {
   const selectSalidaObra = document.getElementById('salida-obra');
   const selectCestaObra = document.getElementById('cesta-obra');
+  const selectReqObra = document.getElementById('req-obra');
 
   const obrasOrdenadas = [...obras].sort((a, b) => {
     const nomA = a.direccion || a.nombre || '';
@@ -514,11 +519,13 @@ function poblarSelectObras(obras) {
 
   if (selectSalidaObra) selectSalidaObra.innerHTML = options;
   if (selectCestaObra) selectCestaObra.innerHTML = options;
+  if (selectReqObra) selectReqObra.innerHTML = options;
 }
 
 function poblarSelectContratistas(contratistas) {
   const selectSalidaCnt = document.getElementById('salida-solicitante');
   const selectCestaCnt = document.getElementById('cesta-contratista');
+  const selectReqCnt = document.getElementById('req-contratista');
 
   const cntOrdenados = [...contratistas].sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
 
@@ -530,6 +537,7 @@ function poblarSelectContratistas(contratistas) {
 
   if (selectSalidaCnt) selectSalidaCnt.innerHTML = options;
   if (selectCestaCnt) selectCestaCnt.innerHTML = options;
+  if (selectReqCnt) selectReqCnt.innerHTML = options;
 }
 
 function poblarSelectProveedores(proveedores) {
@@ -1090,7 +1098,183 @@ async function eliminarProveedor(id) {
 }
 
 // ==========================================
-// 11. MOVIMIENTOS Y NAVEGACIÓN TAB
+// 11. MÓDULO REQUESTS / SOLICITUDES
+// ==========================================
+function agregarItemRequest() {
+  const select = document.getElementById('req-producto-select');
+  const prodId = select.value;
+  const cantidad = Number(document.getElementById('req-cantidad-input').value) || 1;
+
+  if (!prodId) return alert('Seleccione un producto de la lista.');
+
+  const option = select.options[select.selectedIndex];
+  const sku = option.getAttribute('data-sku');
+  const nombre = option.getAttribute('data-nombre');
+  const categoria = option.getAttribute('data-cat');
+
+  const existe = listaRequestTemp.find(item => item.producto_id === prodId);
+  if (existe) {
+    existe.cantidad += cantidad;
+  } else {
+    listaRequestTemp.push({ producto_id: prodId, sku, nombre, categoria, cantidad });
+  }
+
+  document.getElementById('req-cantidad-input').value = '';
+  renderizarTablaRequestTemp();
+}
+
+function removerItemRequest(idx) {
+  listaRequestTemp.splice(idx, 1);
+  renderizarTablaRequestTemp();
+}
+
+function renderizarTablaRequestTemp() {
+  const tbody = document.getElementById('req-items-body');
+  if (!tbody) return;
+
+  if (listaRequestTemp.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay materiales agregados a esta solicitud.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = listaRequestTemp.map((item, idx) => `
+    <tr>
+      <td><b>${item.sku}</b></td>
+      <td>${item.nombre}</td>
+      <td>${item.categoria}</td>
+      <td style="text-align:center; font-weight:bold;">${item.cantidad}</td>
+      <td style="text-align:center;">
+        <button onclick="removerItemRequest(${idx})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function guardarRequest() {
+  const obra = document.getElementById('req-obra').value;
+  const contratista = document.getElementById('req-contratista').value;
+  const notas = document.getElementById('req-notas').value.trim();
+
+  if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
+  if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
+
+  const { data: req, error: errReq } = await _supabase.from('requests').insert([{
+    obra_destino: obra,
+    solicitante: contratista,
+    notas,
+    estado: 'Pendiente',
+    created_by: usuarioActual ? usuarioActual.nombre : 'WFH User'
+  }]).select().single();
+
+  if (errReq) return alert('Error al crear la solicitud: ' + errReq.message);
+
+  const itemsParaInsertar = listaRequestTemp.map(item => ({
+    request_id: req.id,
+    producto_id: item.producto_id,
+    cantidad: item.cantidad
+  }));
+
+  const { error: errItems } = await _supabase.from('request_items').insert(itemsParaInsertar);
+  if (errItems) return alert('Error al registrar ítems: ' + errItems.message);
+
+  alert('¡Request creado con éxito!');
+  listaRequestTemp = [];
+  renderizarTablaRequestTemp();
+  document.getElementById('req-obra').value = '';
+  document.getElementById('req-contratista').value = '';
+  document.getElementById('req-notas').value = '';
+  cargarHistorialRequests();
+}
+
+async function cargarHistorialRequests() {
+  const tbody = document.getElementById('requests-table-body');
+  if (!tbody) return;
+
+  const { data: requests, error } = await _supabase
+    .from('requests')
+    .select('*, request_items(*, productos(nombre))')
+    .order('fecha', { ascending: false });
+
+  if (error || !requests || requests.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay solicitudes registradas.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = requests.map(r => {
+    const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>');
+    const esPendiente = r.estado === 'Pendiente';
+
+    return `
+      <tr>
+        <td>${new Date(r.fecha).toLocaleDateString()} ${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+        <td><b>${r.obra_destino}</b></td>
+        <td>${r.solicitante}</td>
+        <td style="font-size:0.82rem;">${resumenMateriales}</td>
+        <td>
+          <span class="badge ${esPendiente ? 'badge-out' : 'badge-in'}">${r.estado}</span>
+        </td>
+        <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
+        <td>
+          ${esPendiente ? `
+            <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.75rem; font-size:0.75rem; background:var(--header-green);">
+              Despachar / Procesar Salida
+            </button>
+          ` : `<span style="font-size:0.75rem; color:var(--text-muted);">Despachado por: ${r.despachado_por || 'Sistema'}</span>`}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function despacharRequest(requestId) {
+  if (!confirm('¿Confirmas que deseas despachar este Request y descontar los materiales del inventario?')) return;
+
+  const { data: req, error: errReq } = await _supabase
+    .from('requests')
+    .select('*, request_items(*, productos(stock_actual, nombre))')
+    .eq('id', requestId)
+    .single();
+
+  if (errReq || !req) return alert('Error al cargar datos de la solicitud');
+
+  for (const item of req.request_items) {
+    const nuevoStock = (item.productos?.stock_actual || 0) - item.cantidad;
+
+    await _supabase.from('salidas').insert([{
+      producto_id: item.producto_id,
+      obra_destino: req.obra_destino,
+      solicitante: req.solicitante,
+      cantidad: item.cantidad,
+      motivo: `Request Despachado (Solicitó: ${req.created_by})`,
+      updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
+    }]);
+
+    await _supabase.from('movimientos').insert([{
+      producto_id: item.producto_id,
+      tipo: 'SALIDA',
+      cantidad: item.cantidad,
+      concepto: `Despacho de Request a: ${req.obra_destino}`,
+      updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
+    }]);
+
+    await _supabase.from('productos').update({
+      stock_actual: Math.max(0, nuevoStock),
+      updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
+    }).eq('id', item.producto_id);
+  }
+
+  await _supabase.from('requests').update({
+    estado: 'Completado',
+    despachado_por: usuarioActual ? usuarioActual.nombre : 'Gerente Obra',
+    fecha_despacho: new Date()
+  }).eq('id', requestId);
+
+  alert('¡Request despachado con éxito! Se han descontado los materiales del inventario y registrado la salida.');
+  cargarDatos();
+}
+
+// ==========================================
+// 12. MOVIMIENTOS Y NAVEGACIÓN TAB
 // ==========================================
 async function registrarMovimiento(e) {
   e.preventDefault();
