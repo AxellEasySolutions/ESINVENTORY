@@ -48,7 +48,6 @@
     <aside class="sidebar">
       <div class="brand">
         <img src="ES Homes (Horizontal).png" alt="Logo Empresa" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <!-- Respando si no carga la imagen -->
         <div class="brand-fallback" style="display: none;">
           <div class="brand-icon"><i data-lucide="box"></i></div>
           <h2>Easy Solutions</h2>
@@ -236,6 +235,7 @@
         </table>
       </section>
 
+      <!-- CESTA DE ENTREGA CON DROPDOWNS -->
       <section id="tab-movil" class="tab-content">
         <div class="form-card no-print">
           <h3>Generar Conduce de Entrega de Materiales</h3>
@@ -243,11 +243,15 @@
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
-                <input type="text" id="cesta-obra" placeholder="Ej. 417 Liberty Circle" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <select id="cesta-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
+                  <option value="">Seleccione Obra</option>
+                </select>
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Contratista / Recibe</label>
-                <input type="text" id="cesta-contratista" placeholder="Ej. Luis Michor" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <select id="cesta-contratista" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
+                  <option value="">Seleccione Contratista</option>
+                </select>
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Entregado Por (Despachador)</label>
@@ -258,7 +262,7 @@
             <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 0.75rem; align-items: end; background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color);">
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Seleccionar Material</label>
-                <select id="cesta-producto-select" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <select id="cesta-producto-select" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
                   <option value="">Seleccione Producto</option>
                 </select>
               </div>
@@ -333,6 +337,7 @@
         </div>
       </section>
 
+      <!-- ENTRADAS / COMPRAS CON DROPDOWN DE PROVEEDOR -->
       <section id="tab-compras" class="tab-content">
         <div class="form-card">
           <h3>Registrar Compra de Material (Entrada)</h3>
@@ -340,13 +345,15 @@
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Producto</label>
-                <select id="compra-producto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <select id="compra-producto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
                   <option value="">Seleccione Producto</option>
                 </select>
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proveedor</label>
-                <input type="text" id="compra-proveedor" placeholder="Nombre o Razón Social" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <select id="compra-proveedor" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
+                  <option value="">Seleccione Proveedor</option>
+                </select>
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">N° Factura del Proveedor</label>
@@ -365,7 +372,7 @@
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Estado de Pago</label>
-                <select id="compra-estado-pago" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <select id="compra-estado-pago" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
                   <option value="Pagada">Pagada</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Crédito">Crédito</option>
@@ -418,6 +425,7 @@
         </div>
       </section>
 
+      <!-- SALIDAS / ENTREGAS CON DROPDOWNS -->
       <section id="tab-salidas" class="tab-content">
         <div class="form-card">
           <h3 style="background: var(--primary-blue);">Registrar Salida / Entrega de Material</h3>
@@ -425,17 +433,21 @@
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Producto a Despachar</label>
-                <select id="salida-producto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <select id="salida-producto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
                   <option value="">Seleccione Producto</option>
                 </select>
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
-                <input type="text" id="salida-obra" placeholder="Ej. Residencial Las Palmas / Bodega Norte" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <select id="salida-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
+                  <option value="">Seleccione Obra</option>
+                </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Solicitante / Recibe</label>
-                <input type="text" id="salida-solicitante" placeholder="Nombre de quien recibe" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Solicitante / Recibe (Contratista)</label>
+                <select id="salida-solicitante" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
+                  <option value="">Seleccione Contratista</option>
+                </select>
               </div>
             </div>
 
@@ -505,306 +517,287 @@
         </table>
       </section>
 
-     <!-- PESTAÑA: PROYECTOS / OBRAS -->
-<section id="tab-obras" class="tab-content">
-  
-  <!-- FORMULARIO DE REGISTRO DE OBRA -->
-  <div class="form-card">
-    <h3 style="background: var(--primary-blue);">Registrar Nuevo Proyecto / Obra</h3>
-    <form id="obra-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
-      
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Dirección / Nombre de la Obra</label>
-          <input type="text" id="obra-direccion" placeholder="Ej. 417 Liberty Circle" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Lote (Lot)</label>
-          <input type="text" id="obra-lote" placeholder="Ej. Lot 12" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Fase (Phase)</label>
-          <input type="text" id="obra-fase" placeholder="Ej. Phase 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-      </div>
+      <!-- PESTAÑA: PROYECTOS / OBRAS -->
+      <section id="tab-obras" class="tab-content">
+        <div class="form-card">
+          <h3 style="background: var(--primary-blue);">Registrar Nuevo Proyecto / Obra</h3>
+          <form id="obra-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Dirección / Nombre de la Obra</label>
+                <input type="text" id="obra-direccion" placeholder="Ej. 417 Liberty Circle" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Lote (Lot)</label>
+                <input type="text" id="obra-lote" placeholder="Ej. Lot 12" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Fase (Phase)</label>
+                <input type="text" id="obra-fase" placeholder="Ej. Phase 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
 
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Subdivisión (Subdivision)</label>
-          <input type="text" id="obra-subdivision" placeholder="Ej. Oak Ridge Estates" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Código Postal (Zip Code)</label>
-          <input type="text" id="obra-zip" placeholder="Ej. 32801" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Condado (County)</label>
-          <input type="text" id="obra-county" placeholder="Ej. Orange County" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-      </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Subdivisión (Subdivision)</label>
+                <input type="text" id="obra-subdivision" placeholder="Ej. Oak Ridge Estates" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Código Postal (Zip Code)</label>
+                <input type="text" id="obra-zip" placeholder="Ej. 32801" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Condado (County)</label>
+                <input type="text" id="obra-county" placeholder="Ej. Orange County" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
 
-      <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-        <button type="submit" class="btn-primary" style="background: var(--primary-blue); padding:0.6rem 1.5rem;">
-          <i data-lucide="folder-plus"></i> Guardar Proyecto / Obra
-        </button>
-      </div>
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+              <button type="submit" class="btn-primary" style="background: var(--primary-blue); padding:0.6rem 1.5rem;">
+                <i data-lucide="folder-plus"></i> Guardar Proyecto / Obra
+              </button>
+            </div>
 
-    </form>
-  </div>
-
-  <!-- TABLA HISTÓRICA DE OBRAS -->
-  <div class="data-section" style="margin-top: 1.5rem;">
-    <h3>Listado de Proyectos y Obras Activas</h3>
-    <table class="custom-table">
-      <thead>
-        <tr>
-          <th>Dirección</th>
-          <th>Lote</th>
-          <th>Fase</th>
-          <th>Subdivisión</th>
-          <th>C.P. (Zip)</th>
-          <th>Condado (County)</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="obras-table-body">
-        <!-- Renderizado dinámico -->
-      </tbody>
-    </table>
-  </div>
-
-</section>
-     <!-- PESTAÑA: CONTRATISTAS -->
-<section id="tab-contratistas" class="tab-content">
-  
-  <div class="form-card">
-    <!-- CABECERA DE INFORMACIÓN PERSONAL -->
-    <h3 style="background: #17a2b8; display: flex; align-items: center; gap: 0.5rem;">
-      <i data-lucide="id-card"></i> Personal Information
-    </h3>
-    
-    <form id="contractor-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
-      
-      <!-- FILA 1: NOMBRES -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">First Name</label>
-          <input type="text" id="cnt-first-name" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Middle Name</label>
-          <input type="text" id="cnt-middle-name" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Last Name</label>
-          <input type="text" id="cnt-last-name" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-      </div>
-
-      <!-- FILA 2: CONTACTO -->
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Phone</label>
-          <input type="text" id="cnt-phone" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Email</label>
-          <input type="email" id="cnt-email" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-      </div>
-
-      <!-- FILA 3: DATOS FISCALES -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Birth Date</label>
-          <input type="date" id="cnt-birth-date" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">SSN</label>
-          <input type="text" id="cnt-ssn" placeholder="XXX-XX-XXXX" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">ITIN</label>
-          <input type="text" id="cnt-itin" placeholder="9XX-XX-XXXX" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-        </div>
-      </div>
-
-      <!-- SECCIÓN: ADDITIONAL INFORMATION -->
-      <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-        <h4 style="color:#3b5998; font-size:1.05rem; display:flex; align-items:center; gap:0.4rem; margin-bottom:1rem;">
-          <i data-lucide="info"></i> Additional Information
-        </h4>
-
-        <!-- FILA DIRECCIÓN -->
-        <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 0.75rem; margin-bottom:1rem;">
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Address</label>
-            <input type="text" id="cnt-address" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">City</label>
-            <input type="text" id="cnt-city" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">State</label>
-            <select id="cnt-state" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-              <option value="Texas">Texas</option>
-              <option value="Florida">Florida</option>
-              <option value="California">California</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Zip</label>
-            <input type="text" id="cnt-zip" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-          </div>
+          </form>
         </div>
 
-        <!-- FILA STATUS Y SUMMARY -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom:1rem;">
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Status</label>
-            <select id="cnt-status" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-              <option value="Active Contractor">Active Contractor</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Pending">Pending</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Summary</label>
-            <select id="cnt-summary" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-              <option value="Currently Employed at Broadway">Currently Employed at Broadway</option>
-              <option value="Subcontractor General">Subcontractor General</option>
-              <option value="Independent Worker">Independent Worker</option>
-            </select>
-          </div>
+        <div class="data-section" style="margin-top: 1.5rem;">
+          <h3>Listado de Proyectos y Obras Activas</h3>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Dirección</th>
+                <th>Lote</th>
+                <th>Fase</th>
+                <th>Subdivisión</th>
+                <th>C.P. (Zip)</th>
+                <th>Condado (County)</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="obras-table-body">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PESTAÑA: CONTRATISTAS -->
+      <section id="tab-contratistas" class="tab-content">
+        <div class="form-card">
+          <h3 style="background: #17a2b8; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="id-card"></i> Personal Information
+          </h3>
+          
+          <form id="contractor-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">First Name</label>
+                <input type="text" id="cnt-first-name" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Middle Name</label>
+                <input type="text" id="cnt-middle-name" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Last Name</label>
+                <input type="text" id="cnt-last-name" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Phone</label>
+                <input type="text" id="cnt-phone" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Email</label>
+                <input type="email" id="cnt-email" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Birth Date</label>
+                <input type="date" id="cnt-birth-date" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">SSN</label>
+                <input type="text" id="cnt-ssn" placeholder="XXX-XX-XXXX" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">ITIN</label>
+                <input type="text" id="cnt-itin" placeholder="9XX-XX-XXXX" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+              <h4 style="color:#3b5998; font-size:1.05rem; display:flex; align-items:center; gap:0.4rem; margin-bottom:1rem;">
+                <i data-lucide="info"></i> Additional Information
+              </h4>
+
+              <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 0.75rem; margin-bottom:1rem;">
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Address</label>
+                  <input type="text" id="cnt-address" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">City</label>
+                  <input type="text" id="cnt-city" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">State</label>
+                  <select id="cnt-state" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
+                    <option value="Texas">Texas</option>
+                    <option value="Florida">Florida</option>
+                    <option value="California">California</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Zip</label>
+                  <input type="text" id="cnt-zip" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom:1rem;">
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Status</label>
+                  <select id="cnt-status" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
+                    <option value="Active Contractor">Active Contractor</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Summary</label>
+                  <select id="cnt-summary" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
+                    <option value="Currently Employed at Broadway">Currently Employed at Broadway</option>
+                    <option value="Subcontractor General">Subcontractor General</option>
+                    <option value="Independent Worker">Independent Worker</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-bottom:1rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Notify On Updates</label>
+                <input type="text" id="cnt-notify" placeholder="Select Some Options" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <button type="submit" class="btn-primary" style="background: #17a2b8; padding: 0.6rem 1.5rem;">
+                <i data-lucide="user-check"></i> Save Contractor
+              </button>
+            </div>
+
+          </form>
         </div>
 
-        <!-- FILA NOTIFY ON UPDATES -->
-        <div style="margin-bottom:1rem;">
-          <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">Notify On Updates</label>
-          <input type="text" id="cnt-notify" placeholder="Select Some Options" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+        <div class="data-section" style="margin-top: 1.5rem;">
+          <h3>Contractor Directory</h3>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>SSN / ITIN</th>
+                <th>Address</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contractors-table-body">
+              <!-- Carga dinámica -->
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
-      <!-- BOTÓN DE GUARDAR -->
-      <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-        <button type="submit" class="btn-primary" style="background: #17a2b8; padding: 0.6rem 1.5rem;">
-          <i data-lucide="user-check"></i> Save Contractor
-        </button>
-      </div>
+      <!-- PESTAÑA: PROVEEDORES -->
+      <section id="tab-proveedores" class="tab-content">
+        <div class="form-card">
+          <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="truck"></i> Registrar / Editar Proveedor
+          </h3>
+          
+          <form id="provider-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <input type="hidden" id="prov-id">
 
-    </form>
-  </div>
+            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Nombre de la Empresa / Razón Social *</label>
+                <input type="text" id="prov-nombre" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required placeholder="Ej. IMCO Lumber">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Contacto Principal</label>
+                <input type="text" id="prov-contacto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Ej. John Doe">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Tax ID / EIN</label>
+                <input type="text" id="prov-tax" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="XX-XXXXXXX">
+              </div>
+            </div>
 
-  <!-- TABLA DE CONTRATISTAS REGISTRADOS -->
-  <div class="data-section" style="margin-top: 1.5rem;">
-    <h3>Contractor Directory</h3>
-    <table class="custom-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>SSN / ITIN</th>
-          <th>Address</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="contractors-table-body">
-        <!-- Carga dinámica -->
-      </tbody>
-    </table>
-  </div>
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 1fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Teléfono</label>
+                <input type="text" id="prov-telefono" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="(956) 000-0000">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Email</label>
+                <input type="email" id="prov-email" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="ventas@proveedor.com">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Dirección</label>
+                <input type="text" id="prov-direccion" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Ciudad, Estado">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Categoría Principal</label>
+                <select id="prov-categoria" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
+                  <option value="Materiales de Construcción">Materiales de Construcción</option>
+                  <option value="Madera y Molduras">Madera y Molduras</option>
+                  <option value="Plomería y Electricidad">Plomería y Electricidad</option>
+                  <option value="Pintura y Acabados">Pintura y Acabados</option>
+                  <option value="Herramientas y Equipos">Herramientas y Equipos</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+            </div>
 
-</section>
-     <!-- PESTAÑA: PROVEEDORES -->
-<section id="tab-proveedores" class="tab-content">
-  
-  <div class="form-card">
-    <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
-      <i data-lucide="truck"></i> Registrar / Editar Proveedor
-    </h3>
-    
-    <form id="provider-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
-      <input type="hidden" id="prov-id">
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+              <button type="submit" class="btn-primary" style="background: var(--header-green); padding: 0.6rem 1.5rem;">
+                <i data-lucide="save"></i> Guardar Proveedor
+              </button>
+            </div>
 
-      <!-- FILA 1 -->
-      <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Nombre de la Empresa / Razón Social *</label>
-          <input type="text" id="prov-nombre" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required placeholder="Ej. IMCO Lumber">
+          </form>
         </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Contacto Principal</label>
-          <input type="text" id="prov-contacto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Ej. John Doe">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Tax ID / EIN</label>
-          <input type="text" id="prov-tax" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="XX-XXXXXXX">
-        </div>
-      </div>
 
-      <!-- FILA 2 -->
-      <div style="display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 1fr; gap: 0.75rem;">
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Teléfono</label>
-          <input type="text" id="prov-telefono" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="(956) 000-0000">
+        <div class="data-section" style="margin-top: 1.5rem;">
+          <h3>Directorio de Proveedores</h3>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Empresa / Razón Social</th>
+                <th>Contacto</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Categoría</th>
+                <th>Tax ID</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="providers-table-body">
+              <!-- Carga dinámica -->
+            </tbody>
+          </table>
         </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Email</label>
-          <input type="email" id="prov-email" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="ventas@proveedor.com">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Dirección</label>
-          <input type="text" id="prov-direccion" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Ciudad, Estado">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Categoría Principal</label>
-          <select id="prov-categoria" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
-            <option value="Materiales de Construcción">Materiales de Construcción</option>
-            <option value="Madera y Molduras">Madera y Molduras</option>
-            <option value="Plomería y Electricidad">Plomería y Electricidad</option>
-            <option value="Pintura y Acabados">Pintura y Acabados</option>
-            <option value="Herramientas y Equipos">Herramientas y Equipos</option>
-            <option value="General">General</option>
-          </select>
-        </div>
-      </div>
+      </section>
 
-      <!-- BOTÓN DE GUARDAR -->
-      <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-        <button type="submit" class="btn-primary" style="background: var(--header-green); padding: 0.6rem 1.5rem;">
-          <i data-lucide="save"></i> Guardar Proveedor
-        </button>
-      </div>
-
-    </form>
-  </div>
-
-  <!-- TABLA DE PROVEEDORES REGISTRADOS -->
-  <div class="data-section" style="margin-top: 1.5rem;">
-    <h3>Directorio de Proveedores</h3>
-    <table class="custom-table">
-      <thead>
-        <tr>
-          <th>Empresa / Razón Social</th>
-          <th>Contacto</th>
-          <th>Teléfono</th>
-          <th>Email</th>
-          <th>Categoría</th>
-          <th>Tax ID</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="providers-table-body">
-        <!-- Carga dinámica -->
-      </tbody>
-    </table>
-  </div>
-
-</section>
       <section id="tab-vencimientos" class="tab-content"><div class="data-section"><h3>Lotes y Vencimientos</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
       <section id="tab-etiquetas" class="tab-content"><div class="data-section"><h3>Etiquetas</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
       <section id="tab-reportes" class="tab-content"><div class="data-section"><h3>Reportes</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
