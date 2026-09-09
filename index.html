@@ -41,7 +41,29 @@
       <!-- INDICADOR DE USUARIOS EN VIVO (PRESENCE) -->
       <div id="online-users-container" style="display: flex; align-items: center; gap: -0.3rem;"></div>
       
-      <span id="user-badge" style="font-size: 0.8rem; background: rgba(255,255,255,0.15); padding: 0.3rem 0.75rem; border-radius: 20px;">--</span>
+      <!-- MENÚ DESPLEGABLE DE PERFIL DE USUARIO -->
+      <div style="position: relative;">
+        <button id="user-menu-btn" onclick="toggleUserDropdown()" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 0.35rem 0.85rem; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+          <span id="user-badge">--</span>
+          <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+        </button>
+
+        <!-- MENÚ FLOTANTE -->
+        <div id="user-dropdown-menu" style="display: none; position: absolute; right: 0; top: 120%; background: #ffffff; color: var(--text-dark); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid var(--border-color); min-width: 190px; z-index: 1000; overflow: hidden;">
+          <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); background: #f8fafc;">
+            <div id="dropdown-user-name" style="font-weight: 700; font-size: 0.85rem; color: var(--text-dark);">Usuario</div>
+            <div id="dropdown-user-role" style="font-size: 0.72rem; color: var(--text-muted);">Rol</div>
+          </div>
+          <button onclick="openChangePasswordModal()" style="width: 100%; text-align: left; padding: 0.65rem 1rem; border: none; background: none; cursor: pointer; font-size: 0.8rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+            <i data-lucide="key-round" style="width: 15px; height: 15px; color: var(--primary-blue);"></i> Cambiar Contraseña
+          </button>
+          <div style="border-top: 1px solid var(--border-color);"></div>
+          <button onclick="cerrarSesion()" style="width: 100%; text-align: left; padding: 0.65rem 1rem; border: none; background: none; cursor: pointer; font-size: 0.8rem; color: #ef4444; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+            <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
       <button class="btn-primary" id="btn-nuevo-prod-header" onclick="openModal()"><i data-lucide="plus"></i> Nuevo Producto</button>
     </div>
   </header>
@@ -231,6 +253,7 @@
               <th>Categoría</th>
               <th>Stock</th>
               <th>Costo U. ($ USD)</th>
+              <th>Modificado por</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -421,6 +444,7 @@
                 <th>Costo U. ($)</th>
                 <th>Total ($ USD)</th>
                 <th>Estado Pago</th>
+                <th>Registrado por</th>
               </tr>
             </thead>
             <tbody id="purchases-table-body"></tbody>
@@ -484,6 +508,7 @@
                 <th>Solicitante</th>
                 <th>Cantidad</th>
                 <th>Motivo</th>
+                <th>Despachado por</th>
               </tr>
             </thead>
             <tbody id="dispatches-table-body"></tbody>
@@ -514,6 +539,7 @@
               <th>Tipo</th>
               <th>Cantidad</th>
               <th>Concepto</th>
+              <th>Realizado por</th>
             </tr>
           </thead>
           <tbody id="movements-table-body"></tbody>
@@ -577,6 +603,7 @@
                 <th>C.P. (Zip)</th>
                 <th>Condado (County)</th>
                 <th>Estado</th>
+                <th>Modificado por</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -710,6 +737,7 @@
                 <th>SSN / ITIN</th>
                 <th>Address</th>
                 <th>Status</th>
+                <th>Modificado por</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -791,6 +819,7 @@
                 <th>Email</th>
                 <th>Categoría</th>
                 <th>Tax ID</th>
+                <th>Modificado por</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -808,6 +837,7 @@
     </main>
   </div>
 
+  <!-- MODAL: CREAR/EDITAR PRODUCTO -->
   <div id="modal-product" class="modal">
     <div class="modal-content">
       <h3>Crear Nuevo Material</h3>
@@ -821,6 +851,33 @@
         <div class="modal-actions">
           <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CAMBIAR CONTRASEÑA -->
+  <div id="modal-change-password" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-dark);">
+        <i data-lucide="key-round" style="color: var(--primary-blue);"></i> Cambiar Contraseña
+      </h3>
+      <form id="change-password-form" onsubmit="guardarNuevaContrasena(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Contraseña Actual</label>
+          <input type="password" id="pass-actual" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="••••••••">
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Nueva Contraseña</label>
+          <input type="password" id="pass-nueva" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="Mínimo 6 caracteres">
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Confirmar Nueva Contraseña</label>
+          <input type="password" id="pass-confirmar" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="Repite la nueva contraseña">
+        </div>
+        <div class="modal-actions" style="margin-top: 0.5rem;">
+          <button type="button" class="btn-cancel" onclick="closeChangePasswordModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: var(--header-green);">Actualizar Contraseña</button>
         </div>
       </form>
     </div>
