@@ -90,7 +90,8 @@
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Proveedores</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('vencimientos')"><i data-lucide="calendar"></i> Lotes y Vencimientos</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('movimientos')"><i data-lucide="arrow-left-right"></i> Kardex</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('etiquetas')"><i data-lucide="tag"></i> Etiquetas</button>
+        <!-- APARTADO MÓDULO REQUESTS -->
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('etiquetas')"><i data-lucide="clipboard-list"></i> Requests / Solicitudes</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('reportes')"><i data-lucide="bar-chart-3"></i> Reportes</button>
       </nav>
 
@@ -831,7 +832,94 @@
       </section>
 
       <section id="tab-vencimientos" class="tab-content"><div class="data-section"><h3>Lotes y Vencimientos</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
-      <section id="tab-etiquetas" class="tab-content"><div class="data-section"><h3>Etiquetas</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
+      
+      <!-- PESTAÑA: REQUESTS / SOLICITUDES -->
+      <section id="tab-etiquetas" class="tab-content">
+        <div class="form-card">
+          <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="file-plus"></i> Crear Nueva Solicitud de Materiales (Request)
+          </h3>
+          
+          <div class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Proyecto / Obra Destino *</label>
+                <select id="req-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;" required>
+                  <option value="">Seleccione Obra</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Contratista / Recibe *</label>
+                <select id="req-contratista" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;" required>
+                  <option value="">Seleccione Contratista</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Notas / Instrucciones de Entrega</label>
+                <input type="text" id="req-notas" placeholder="Ej. Entregar en la mañana / Frente de obra 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 0.75rem; align-items: end; background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Material</label>
+                <select id="req-producto-select" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;">
+                  <option value="">Seleccione Producto</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Cantidad Requerida</label>
+                <input type="number" id="req-cantidad-input" min="1" placeholder="1" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+              </div>
+              <button type="button" class="btn-secondary" onclick="agregarItemRequest()" style="height: 38px;">
+                <i data-lucide="plus"></i> Añadir a Lista
+              </button>
+            </div>
+
+            <table class="custom-table" style="margin-top: 0.5rem;">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th style="text-align:center;">Cantidad</th>
+                  <th style="text-align:center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="req-items-body">
+                <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay materiales agregados a esta solicitud.</td></tr>
+              </tbody>
+            </table>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <button type="button" class="btn-primary" onclick="guardarRequest()" style="background: var(--header-green); padding: 0.65rem 1.8rem; font-size: 0.9rem;">
+                <i data-lucide="send"></i> Generar y Enviar Request
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="data-section" style="margin-top: 1.5rem;">
+          <h3>Solicitudes Registradas (Requests)</h3>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Obra Destino</th>
+                <th>Contratista</th>
+                <th>Materiales Solicitados</th>
+                <th>Estado</th>
+                <th>Solicitado Por</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="requests-table-body">
+              <!-- Carga dinámica -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section id="tab-reportes" class="tab-content"><div class="data-section"><h3>Reportes</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
 
     </main>
