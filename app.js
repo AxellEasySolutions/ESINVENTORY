@@ -89,6 +89,7 @@ function iniciarInterfaz() {
   aplicarPermisosRol();
   cargarDatos();
   suscribirPresenciaEnVivo();
+  escucharNotificacionesRequests();
 }
 
 function aplicarPermisosRol() {
@@ -233,6 +234,80 @@ function renderizarUsuariosConectados(state) {
       </div>
     `;
   }).join('');
+}
+
+// ==========================================
+// NOTIFICACIONES FLOTANTES PERSISTENTES (TOAST)
+// ==========================================
+function escucharNotificacionesRequests() {
+  _supabase
+    .channel('public:requests')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, payload => {
+      const nuevoReq = payload.new;
+      if (nuevoReq && (!usuarioActual || nuevoReq.created_by !== usuarioActual.nombre)) {
+        mostrarNotificacionFlotante(nuevoReq);
+      }
+    })
+    .subscribe();
+}
+
+function mostrarNotificacionFlotante(req) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toastId = `toast-${Date.now()}`;
+  const toast = document.createElement('div');
+  toast.id = toastId;
+  toast.style.cssText = `
+    background: #ffffff;
+    border-left: 5px solid var(--header-green);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--text-dark);
+    font-family: inherit;
+    animation: slideInRight 0.3s ease;
+  `;
+
+  toast.innerHTML = `
+    <div style="background: #dcfce7; color: #16a34a; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+    </div>
+    <div style="flex-grow: 1;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <strong style="font-size: 0.85rem; color: var(--text-dark);">¡Nuevo Request Recibido!</strong>
+        <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+      </div>
+      <p style="font-size: 0.78rem; margin: 0; color: var(--text-muted); line-height: 1.3;">
+        <b>${req.created_by || 'WFH'}</b> ha enviado una solicitud para la obra <b>${req.obra_destino}</b>.
+      </p>
+      <button onclick="irARequests('${toastId}')" style="background: none; border: none; color: var(--primary-blue); font-size: 0.75rem; font-weight: 700; padding: 0; margin-top: 6px; cursor: pointer; text-decoration: underline;">
+        Ver en tabla de Requests
+      </button>
+    </div>
+    <button onclick="cerrarToast('${toastId}')" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.1rem; font-weight: 700; padding: 0; line-height: 1;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+      &times;
+    </button>
+  `;
+
+  container.appendChild(toast);
+  lucide.createIcons();
+}
+
+function cerrarToast(id) {
+  const toast = document.getElementById(id);
+  if (toast) {
+    toast.style.animation = 'fadeOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }
+}
+
+function irARequests(toastId) {
+  switchTab('etiquetas');
+  cerrarToast(toastId);
 }
 
 // ==========================================
@@ -1121,7 +1196,6 @@ function agregarItemRequest() {
   const nombre = option.getAttribute('data-nombre');
   const categoria = option.getAttribute('data-cat');
 
-  // Validar si ya hay acumulados en la lista temporal del formulario
   const acumuladoPrevio = listaRequestTemp.filter(i => i.producto_id === prodId).reduce((sum, i) => sum + i.cantidad, 0);
   const totalSolicitado = acumuladoPrevio + cantidad;
 
@@ -1176,7 +1250,6 @@ async function guardarRequest() {
   if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
   if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
 
-  // 1. Insertar la solicitud principal
   const { data: req, error: errReq } = await _supabase.from('requests').insert([{
     obra_destino: obra,
     solicitante: contratista,
@@ -1187,7 +1260,6 @@ async function guardarRequest() {
 
   if (errReq) return alert('Error al crear la solicitud: ' + errReq.message);
 
-  // 2. Descontar inmediatamente el stock en BD (Reservar) y registrar items
   for (const item of listaRequestTemp) {
     await _supabase.from('request_items').insert([{
       request_id: req.id,
@@ -1281,7 +1353,6 @@ async function despacharRequest(requestId) {
   if (errReq || !req) return alert('Error al cargar datos de la solicitud');
 
   for (const item of req.request_items) {
-    // Registrar Salida Oficial
     await _supabase.from('salidas').insert([{
       producto_id: item.producto_id,
       obra_destino: req.obra_destino,
@@ -1291,7 +1362,6 @@ async function despacharRequest(requestId) {
       updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
     }]);
 
-    // Registrar en Movimientos / Kardex
     await _supabase.from('movimientos').insert([{
       producto_id: item.producto_id,
       tipo: 'SALIDA',
@@ -1301,7 +1371,6 @@ async function despacharRequest(requestId) {
     }]);
   }
 
-  // Actualizar Estado a Completado
   await _supabase.from('requests').update({
     estado: 'Completado',
     despachado_por: usuarioActual ? usuarioActual.nombre : 'Gerente Obra',
@@ -1324,7 +1393,6 @@ async function cancelarRequest(requestId) {
 
   if (errReq || !req) return alert('Error al cargar la solicitud');
 
-  // Reintegrar stock a cada producto
   for (const item of req.request_items) {
     const { data: prod } = await _supabase.from('productos').select('stock_actual').eq('id', item.producto_id).single();
     if (prod) {
@@ -1336,7 +1404,6 @@ async function cancelarRequest(requestId) {
     }
   }
 
-  // Actualizar estado a Cancelado
   await _supabase.from('requests').update({
     estado: 'Cancelado',
     despachado_por: usuarioActual ? usuarioActual.nombre : 'Sistema'
