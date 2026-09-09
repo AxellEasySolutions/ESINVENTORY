@@ -239,15 +239,29 @@ function renderizarUsuariosConectados(state) {
 // ==========================================
 // NOTIFICACIONES FLOTANTES PERSISTENTES (TOAST)
 // ==========================================
+// ESCUCHAR NUEVOS REQUESTS EN TIEMPO REAL
 function escucharNotificacionesRequests() {
   _supabase
-    .channel('public:requests')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, payload => {
-      const nuevoReq = payload.new;
-      if (nuevoReq && (!usuarioActual || nuevoReq.created_by !== usuarioActual.nombre)) {
-        mostrarNotificacionFlotante(nuevoReq);
+    .channel('requests-realtime')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'requests'
+      },
+      (payload) => {
+        const nuevoReq = payload.new;
+        
+        // Cargar/actualizar la tabla de requests automáticamente
+        cargarHistorialRequests();
+
+        // Si la solicitud la hizo otro usuario, lanzar la notificación flotante
+        if (nuevoReq && usuarioActual && nuevoReq.created_by !== usuarioActual.nombre) {
+          mostrarNotificacionFlotante(nuevoReq);
+        }
       }
-    })
+    )
     .subscribe();
 }
 
