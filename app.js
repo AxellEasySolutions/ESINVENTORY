@@ -349,6 +349,7 @@ async function cargarDatos() {
   cargarHistorialCompras();
   cargarHistorialSalidas();
   cargarHistorialRequests();
+  cargarRequestTracking();
   
   poblarSelectProductos(productos || []);
   poblarSelectObras(obras || []);
@@ -1264,6 +1265,7 @@ async function guardarRequest() {
     solicitante: contratista,
     notas,
     estado: 'Pendiente',
+    estado_seguimiento: 'Aprobado / Listo en Bodega',
     created_by: usuarioActual ? usuarioActual.nombre : 'WFH User'
   }]).select().single();
 
@@ -1431,11 +1433,12 @@ async function despacharRequest(requestId) {
 
   await _supabase.from('requests').update({
     estado: 'Completado',
+    estado_seguimiento: 'Aprobado / Listo en Bodega',
     despachado_por: usuarioActual ? usuarioActual.nombre : 'Gerente Obra',
     fecha_despacho: new Date()
   }).eq('id', requestId);
 
-  alert('¡Request despachado! Se ha formalizado el registro en Salidas e Historial.');
+  alert('¡Request despachado! Se ha formalizado el registro en Salidas y pasado al Request Tracking.');
   cargarDatos();
 }
 
@@ -1472,7 +1475,98 @@ async function cancelarRequest(requestId) {
 }
 
 // ==========================================
-// 12. MOVIMIENTOS Y NAVEGACIÓN TAB
+// 12. MÓDULO REQUEST TRACKING (SEGUIMIENTO DE ENTREGAS)
+// ==========================================
+async function cargarRequestTracking() {
+  const tbody = document.getElementById('tracking-table-body');
+  if (!tbody) return;
+
+  const { data: requests, error } = await _supabase
+    .from('requests')
+    .select('*, request_items(*, productos(nombre))')
+    .eq('estado', 'Completado')
+    .order('fecha_despacho', { ascending: false });
+
+  if (error || !requests || requests.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas para seguimiento.</td></tr>';
+    actualizarKpisTracking([]);
+    return;
+  }
+
+  actualizarKpisTracking(requests);
+
+  tbody.innerHTML = requests.map(r => {
+    const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Prod'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
+    const estadoTrack = r.estado_seguimiento || 'Aprobado / Listo en Bodega';
+
+    let colorBadge = '#3b82f6';
+    if (estadoTrack === 'En Tránsito') colorBadge = '#f59e0b';
+    if (estadoTrack === 'Entregado en Obra') colorBadge = '#10b981';
+    if (estadoTrack === 'Completado / Firmado') colorBadge = '#059669';
+
+    return `
+      <tr>
+        <td>
+          ${r.fecha_despacho ? new Date(r.fecha_despacho).toLocaleDateString() + ' ' + new Date(r.fecha_despacho).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date(r.fecha).toLocaleDateString()}
+        </td>
+        <td><b>${r.obra_destino || 'N/A'}</b></td>
+        <td>${r.solicitante || 'N/A'}</td>
+        <td style="font-size:0.82rem;">${resumenMateriales}</td>
+        <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.despachado_por || 'Sistema'}</span></td>
+        <td>
+          <span class="badge" style="background: ${colorBadge}15; color: ${colorBadge}; border: 1px solid ${colorBadge}; font-weight:700;">
+            ${estadoTrack}
+          </span>
+        </td>
+        <td>
+          <select onchange="actualizarEstadoTracking('${r.id}', this.value)" style="padding: 0.35rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: #fff;">
+            <option value="Aprobado / Listo en Bodega" ${estadoTrack === 'Aprobado / Listo en Bodega' ? 'selected' : ''}>📦 Listo en Bodega</option>
+            <option value="En Tránsito" ${estadoTrack === 'En Tránsito' ? 'selected' : ''}>🚚 En Tránsito</option>
+            <option value="Entregado en Obra" ${estadoTrack === 'Entregado en Obra' ? 'selected' : ''}>📍 Entregado en Obra</option>
+            <option value="Completado / Firmado" ${estadoTrack === 'Completado / Firmado' ? 'selected' : ''}>✅ Completado / Firmado</option>
+          </select>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function actualizarKpisTracking(requests) {
+  const listos = requests.filter(r => (r.estado_seguimiento || 'Aprobado / Listo en Bodega') === 'Aprobado / Listo en Bodega').length;
+  const transito = requests.filter(r => r.estado_seguimiento === 'En Tránsito').length;
+  const entregados = requests.filter(r => r.estado_seguimiento === 'Entregado en Obra' || r.estado_seguimiento === 'Completado / Firmado').length;
+
+  const kpiListos = document.getElementById('track-kpi-listos');
+  const kpiTransito = document.getElementById('track-kpi-transito');
+  const kpiEntregados = document.getElementById('track-kpi-entregados');
+
+  if (kpiListos) kpiListos.innerText = listos;
+  if (kpiTransito) kpiTransito.innerText = transito;
+  if (kpiEntregados) kpiEntregados.innerText = entregados;
+}
+
+async function actualizarEstadoTracking(requestId, nuevoEstado) {
+  const { error } = await _supabase
+    .from('requests')
+    .update({
+      estado_seguimiento: nuevoEstado,
+      tracking_updated_at: new Date()
+    })
+    .eq('id', requestId);
+
+  if (error) {
+    return alert('Error al actualizar el estado de seguimiento: ' + error.message);
+  }
+
+  cargarRequestTracking();
+}
+
+// ==========================================
+// 13. MOVIMIENTOS Y NAVEGACIÓN TAB
 // ==========================================
 async function registrarMovimiento(e) {
   e.preventDefault();
