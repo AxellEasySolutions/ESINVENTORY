@@ -1310,7 +1310,9 @@ async function cargarHistorialRequests() {
   }
 
   tbody.innerHTML = requests.map(r => {
-    const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>');
+    const items = r.request_items || [];
+    const resumenMateriales = items.map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
+    
     const esPendiente = r.estado === 'Pendiente';
     const esCancelado = r.estado === 'Cancelado';
 
@@ -1321,15 +1323,15 @@ async function cargarHistorialRequests() {
     return `
       <tr>
         <td>${new Date(r.fecha).toLocaleDateString()} ${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-        <td><b>${r.obra_destino}</b></td>
-        <td>${r.solicitante}</td>
+        <td><b>${r.obra_destino || 'N/A'}</b></td>
+        <td>${r.solicitante || 'N/A'}</td>
         <td style="font-size:0.82rem;">${resumenMateriales}</td>
         <td>
-          <span class="badge ${badgeClass}" style="${esCancelado ? 'color:#ef4444; border:1px solid #ef4444; background:#fef2f2;' : ''}">${r.estado}</span>
+          <span class="badge ${badgeClass}" style="${esCancelado ? 'color:#ef4444; border:1px solid #ef4444; background:#fef2f2;' : ''}">${r.estado || 'Pendiente'}</span>
         </td>
         <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
         <td>
-          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+          <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
             ${esPendiente ? `
               <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
                 Despachar
@@ -1340,9 +1342,15 @@ async function cargarHistorialRequests() {
             ` : ''}
 
             ${!esCancelado ? `
-              <button onclick="cargarRequestEnCesta('${r.id}')" class="btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--primary-blue); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:0.3rem;">
+              <button onclick="cargarRequestEnCesta('${r.id}')" class="btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--primary-blue); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:0.3rem;">
                 <i data-lucide="shopping-bag" style="width:12px; height:12px;"></i> Abrir en Cesta
               </button>
+            ` : ''}
+
+            ${!esPendiente && !esCancelado ? `
+              <span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:2px;">
+                Despachado por: ${r.despachado_por || 'Sistema'}
+              </span>
             ` : ''}
           </div>
         </td>
@@ -1350,7 +1358,9 @@ async function cargarHistorialRequests() {
     `;
   }).join('');
 
-  lucide.createIcons();
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 }
 
 // CARGAR DETALLES DEL REQUEST DIRECTAMENTE EN LA CESTA
