@@ -88,7 +88,7 @@
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('obras')"><i data-lucide="folder-kanban"></i> Proyectos / Obras</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('contratistas')"><i data-lucide="users"></i> Contratistas</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Proveedores</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('vencimientos')"><i data-lucide="calendar"></i> Lotes y Vencimientos</button>
+       <button class="nav-btn" data-role="ALL" onclick="switchTab('vencimientos')"><i data-lucide="truck"></i> Request Tracking</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('movimientos')"><i data-lucide="arrow-left-right"></i> Kardex</button>
         <!-- BOTÓN ACCESIBLE PARA TODOS LOS USUARIOS -->
         <button class="nav-btn" data-role="ALL" onclick="switchTab('etiquetas')"><i data-lucide="clipboard-list"></i> Requests / Solicitudes</button>
@@ -831,7 +831,58 @@
         </div>
       </section>
 
-      <section id="tab-vencimientos" class="tab-content"><div class="data-section"><h3>Lotes y Vencimientos</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
+      <!-- PESTAÑA: REQUEST TRACKING (SEGUIMIENTO LOGÍSTICO) -->
+<section id="tab-vencimientos" class="tab-content">
+  
+  <div class="control-banner" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+    <div>
+      <span class="sub-tag" style="background: rgba(255,255,255,0.15); color: #fff;">SEGUIMIENTO DE ENTREGAS</span>
+      <h2>Request Tracking Center</h2>
+      <p>Monitoreo en tiempo real del estado de despacho y transporte de solicitudes aprobadas.</p>
+    </div>
+  </div>
+
+  <!-- TARJETAS DE RESUMEN LOGÍSTICO (KPIs) -->
+  <div class="kpi-grid" style="margin-top: 1.5rem;">
+    <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
+      <span class="kpi-title">LISTOS EN BODEGA</span>
+      <h3 id="track-kpi-listos" style="color:#3b82f6;">0</h3>
+      <span class="kpi-sub">Empaquetados / Por salir</span>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
+      <span class="kpi-title">EN TRÁNSITO</span>
+      <h3 id="track-kpi-transito" style="color:#f59e0b;">0</h3>
+      <span class="kpi-sub">En camino a la obra</span>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #10b981;">
+      <span class="kpi-title">ENTREGADOS</span>
+      <h3 id="track-kpi-entregados" style="color:#10b981;">0</h3>
+      <span class="kpi-sub">En el punto de obra</span>
+    </div>
+  </div>
+
+  <!-- TABLA DE SEGUIMIENTO EN VIVO -->
+  <div class="data-section" style="margin-top: 1.5rem;">
+    <h3>Solicitudes Aprobadas en Seguimiento</h3>
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Fecha Aprobación</th>
+          <th>Obra Destino</th>
+          <th>Contratista</th>
+          <th>Materiales</th>
+          <th>Despachado Por</th>
+          <th>Estado de Entrega</th>
+          <th>Acción de Rastreo</th>
+        </tr>
+      </thead>
+      <tbody id="tracking-table-body">
+        <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas en seguimiento.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
       
       <!-- PESTAÑA: REQUESTS / SOLICITUDES -->
       <section id="tab-etiquetas" class="tab-content">
