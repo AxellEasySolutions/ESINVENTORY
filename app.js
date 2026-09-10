@@ -239,7 +239,6 @@ function renderizarUsuariosConectados(state) {
 // ==========================================
 // NOTIFICACIONES FLOTANTES PERSISTENTES (TOAST)
 // ==========================================
-// ESCUCHAR NUEVOS REQUESTS EN TIEMPO REAL
 function escucharNotificacionesRequests() {
   _supabase
     .channel('requests-realtime')
@@ -253,10 +252,8 @@ function escucharNotificacionesRequests() {
       (payload) => {
         const nuevoReq = payload.new;
         
-        // Cargar/actualizar la tabla de requests automáticamente
         cargarHistorialRequests();
 
-        // Si la solicitud la hizo otro usuario, lanzar la notificación flotante
         if (nuevoReq && usuarioActual && nuevoReq.created_by !== usuarioActual.nombre) {
           mostrarNotificacionFlotante(nuevoReq);
         }
@@ -582,11 +579,9 @@ function poblarSelectProductos(productos) {
 
   const prodOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-  // Opción general para Compras y Movimientos (Muestra todo el catálogo)
   const optionsTodas = '<option value="">Seleccione Producto</option>' + 
     prodOrdenados.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('');
 
-  // Opción filtrada para Salidas, Cesta y Requests (SOLO STOCK > 0)
   const prodDisponibles = prodOrdenados.filter(p => p.stock_actual > 0);
   const optionsSoloDisponibles = '<option value="">Seleccione Producto</option>' + 
     prodDisponibles.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}" data-stock="${p.stock_actual}">${p.nombre} (Disponible: ${p.stock_actual})</option>`).join('');
@@ -1306,7 +1301,7 @@ async function cargarHistorialRequests() {
 
   const { data: requests, error } = await _supabase
     .from('requests')
-    .select('*, request_items(*, productos(nombre))')
+    .select('*, request_items(*, productos(*))')
     .order('fecha', { ascending: false });
 
   if (error || !requests || requests.length === 0) {
@@ -1334,24 +1329,63 @@ async function cargarHistorialRequests() {
         </td>
         <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
         <td>
-          ${esPendiente ? `
-            <div style="display:flex; gap:0.4rem;">
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+            ${esPendiente ? `
               <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
                 Despachar
               </button>
               <button onclick="cancelarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">
                 Cancelar
               </button>
-            </div>
-          ` : `
-            <span style="font-size:0.75rem; color:var(--text-muted);">
-              ${r.estado === 'Completado' ? 'Despachado por: ' + (r.despachado_por || 'Sistema') : 'Solicitud Cancelada'}
-            </span>
-          `}
+            ` : ''}
+
+            ${!esCancelado ? `
+              <button onclick="cargarRequestEnCesta('${r.id}')" class="btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--primary-blue); color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:0.3rem;">
+                <i data-lucide="shopping-bag" style="width:12px; height:12px;"></i> Abrir en Cesta
+              </button>
+            ` : ''}
+          </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  lucide.createIcons();
+}
+
+// CARGAR DETALLES DEL REQUEST DIRECTAMENTE EN LA CESTA
+async function cargarRequestEnCesta(requestId) {
+  const { data: req, error } = await _supabase
+    .from('requests')
+    .select('*, request_items(*, productos(*))')
+    .eq('id', requestId)
+    .single();
+
+  if (error || !req) return alert('Error al cargar los detalles del Request.');
+
+  const selectObra = document.getElementById('cesta-obra');
+  const selectCnt = document.getElementById('cesta-contratista');
+  const inputEntregado = document.getElementById('cesta-entregado');
+
+  if (selectObra) selectObra.value = req.obra_destino;
+  if (selectCnt) selectCnt.value = req.solicitante;
+  if (inputEntregado) inputEntregado.value = usuarioActual ? usuarioActual.nombre : (req.despachado_por || 'Despachador Bodega');
+
+  cestaMateriales = (req.request_items || []).map(item => ({
+    id: item.producto_id,
+    sku: item.productos?.sku || 'N/A',
+    nombre: item.productos?.nombre || 'Producto',
+    categoria: item.productos?.categoria || 'General',
+    cantidad: item.cantidad
+  }));
+
+  renderizarCesta();
+  switchTab('movil');
+
+  setTimeout(() => {
+    const printArea = document.querySelector('.print-area');
+    if (printArea) printArea.scrollIntoView({ behavior: 'smooth' });
+  }, 200);
 }
 
 // APROBACIÓN DEFINITIVA Y REGISTRO EN SALIDAS / KARDEX
