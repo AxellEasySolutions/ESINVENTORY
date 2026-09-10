@@ -334,6 +334,12 @@ async function cargarDatos() {
     .order('fecha', { ascending: false });
   if (errMov) console.error('Error cargando movimientos:', errMov);
 
+  const { data: salidasRecientes, error: errSal } = await _supabase
+    .from('salidas')
+    .select('*, productos(nombre)')
+    .order('fecha', { ascending: false });
+  if (errSal) console.error('Error cargando salidas para dashboard:', errSal);
+
   const { data: obras, error: errObras } = await _supabase.from('obras').select('*');
   if (errObras) console.error('Error cargando obras:', errObras);
 
@@ -343,7 +349,7 @@ async function cargarDatos() {
   const { data: proveedores, error: errProv } = await _supabase.from('proveedores').select('*');
   if (errProv) console.error('Error cargando proveedores:', errProv);
 
-  renderizarDashboard(productos || [], movimientos || [], obras || []);
+  renderizarDashboard(productos || [], movimientos || [], obras || [], salidasRecientes || []);
   renderizarTablaInventario(productos || []);
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
@@ -364,7 +370,7 @@ async function cargarDatos() {
 // ==========================================
 // 3. DASHBOARD Y KPIs
 // ==========================================
-function renderizarDashboard(productos, movimientos, obras) {
+function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
   document.getElementById('kpi-materiales').innerText = productos.length;
 
   const totalValor = productos.reduce((sum, p) => sum + (p.stock_actual * p.costo_unitario), 0);
@@ -471,20 +477,21 @@ function renderizarDashboard(productos, movimientos, obras) {
     `).join('');
   }
 
+  // ENLAZADO DIRECTO A SALIDAS/ENTREGAS A OBRA
   const dashMovContainer = document.getElementById('dash-movements');
-  if (movimientos.length === 0) {
-    dashMovContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin movimientos recientes.</p>';
+  if (!salidasRecientes || salidasRecientes.length === 0) {
+    dashMovContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin entregas recientes a obras.</p>';
   } else {
-    dashMovContainer.innerHTML = movimientos.slice(0, 3).map(m => `
+    dashMovContainer.innerHTML = salidasRecientes.slice(0, 4).map(s => `
       <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
         <div>
-          <span class="badge ${m.tipo === 'ENTRADA' ? 'badge-in' : 'badge-out'}">${m.tipo}</span>
-          <strong style="font-size:0.85rem; margin-left:0.3rem;">${m.productos?.nombre || 'Producto'}</strong>
-          <div style="font-size:0.72rem; color:var(--text-muted);">${m.concepto}</div>
+          <span class="badge badge-out">SALIDA</span>
+          <strong style="font-size:0.85rem; margin-left:0.3rem;">${s.productos?.nombre || 'Material'}</strong>
+          <div style="font-size:0.72rem; color:var(--text-muted);">Entrega a: ${s.obra_destino} (Recibe: ${s.solicitante})</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:0.85rem; font-weight:700;">${m.cantidad} un.</div>
-          <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(m.fecha).toLocaleDateString()}</div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-size:0.85rem; font-weight:700; color:#ef4444;">-${s.cantidad} un.</div>
+          <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(s.fecha).toLocaleDateString()}</div>
         </div>
       </div>
     `).join('');
