@@ -1333,14 +1333,17 @@ async function cargarHistorialRequests() {
         </td>
         <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
         <td>
-          <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; flex-direction:column; gap:0.4rem; align-items:flex-start;">
+            
             ${esPendiente ? `
-              <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
-                Despachar
-              </button>
-              <button onclick="cancelarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">
-                Cancelar
-              </button>
+              <div style="display:flex; gap:0.4rem;">
+                <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
+                  Despachar
+                </button>
+                <button onclick="cancelarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:600;">
+                  Cancelar
+                </button>
+              </div>
             ` : ''}
 
             ${!esCancelado ? `
@@ -1350,10 +1353,11 @@ async function cargarHistorialRequests() {
             ` : ''}
 
             ${!esPendiente && !esCancelado ? `
-              <span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:2px;">
-                Despachado por: ${r.despachado_por || 'Sistema'}
+              <span style="font-size:0.7rem; color:var(--text-muted); font-weight:500;">
+                Despachado por: <b>${r.despachado_por || 'Sistema'}</b>
               </span>
             ` : ''}
+
           </div>
         </td>
       </tr>
