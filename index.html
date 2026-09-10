@@ -209,12 +209,15 @@
 
             <div class="dash-card">
               <div class="dash-card-header">
-  <div>
-    <h3>Movimientos recientes</h3>
-    <p>Salidas y devoluciones hacia obra</p>
-  </div>
-  <button class="btn-link" onclick="switchTab('salidas')">Ver historial</button>
-</div>
+                <div>
+                  <h3>Movimientos recientes</h3>
+                  <p>Salidas y devoluciones hacia obra</p>
+                </div>
+                <button class="btn-link" data-role="ADMIN" onclick="switchTab('movimientos')">Ver historial</button>
+              </div>
+              <div id="dash-movements" class="movements-list"></div>
+            </div>
+          </div>
 
           <div class="dash-col">
             <div class="dash-card">
