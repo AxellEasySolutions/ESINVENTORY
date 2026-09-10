@@ -368,19 +368,23 @@ async function cargarDatos() {
 }
 
 // ==========================================
-// 3. DASHBOARD Y KPIs (ENLAZADO A SALIDAS EN VIVO)
+// 3. DASHBOARD Y KPIs (SISTEMA DE VALIDACIÓN SEGURA)
 // ==========================================
 function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
-  document.getElementById('kpi-materiales').innerText = productos.length;
+  const elMat = document.getElementById('kpi-materiales');
+  if (elMat) elMat.innerText = productos.length;
 
-  const totalValor = productos.reduce((sum, p) => sum + (p.stock_actual * p.costo_unitario), 0);
-  document.getElementById('kpi-valor').innerText = `$${totalValor.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const totalValor = productos.reduce((sum, p) => sum + (p.stock_actual * (p.costo_unitario || 0)), 0);
+  const elVal = document.getElementById('kpi-valor');
+  if (elVal) elVal.innerText = `$${totalValor.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const criticos = productos.filter(p => p.stock_actual <= p.stock_minimo && p.stock_actual > 0);
-  document.getElementById('kpi-critico').innerText = criticos.length;
+  const elCrit = document.getElementById('kpi-critico');
+  if (elCrit) elCrit.innerText = criticos.length;
 
   const agotados = productos.filter(p => p.stock_actual === 0);
-  document.getElementById('kpi-agotados').innerText = agotados.length;
+  const elAgot = document.getElementById('kpi-agotados');
+  if (elAgot) elAgot.innerText = agotados.length;
 
   const obrasActivas = obras.filter(o => !o.estado || o.estado.toLowerCase() === 'activa');
   const kpiObras = document.getElementById('kpi-obras-count');
@@ -423,78 +427,90 @@ function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
     }
   });
 
-  document.getElementById('kpi-entradas').innerText = `$${totalEntradas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  document.getElementById('kpi-salidas').innerText = `$${totalSalidas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const elEnt = document.getElementById('kpi-entradas');
+  if (elEnt) elEnt.innerText = `$${totalEntradas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  const elSal = document.getElementById('kpi-salidas');
+  if (elSal) elSal.innerText = `$${totalSalidas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const categoriasMap = {};
   productos.forEach(p => {
-    categoriasMap[p.categoria] = (categoriasMap[p.categoria] || 0) + p.stock_actual;
+    if (p.categoria) {
+      categoriasMap[p.categoria] = (categoriasMap[p.categoria] || 0) + p.stock_actual;
+    }
   });
 
   const numCategorias = Object.keys(categoriasMap).length;
-  document.getElementById('kpi-cat-count').innerText = `${numCategorias} categorías`;
+  const elCatCount = document.getElementById('kpi-cat-count');
+  if (elCatCount) elCatCount.innerText = `${numCategorias} categorías`;
 
   const dashCatContainer = document.getElementById('dash-categories');
-  const maxStock = Math.max(...Object.values(categoriasMap), 1);
-
-  if (numCategorias === 0) {
-    dashCatContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">No hay categorías registradas.</p>';
-  } else {
-    dashCatContainer.innerHTML = Object.entries(categoriasMap).map(([cat, cant]) => {
-      const pct = Math.min((cant / maxStock) * 100, 100);
-      return `
-        <div class="cat-row">
-          <div class="cat-labels">
-            <strong>${cat}</strong>
-            <span style="color: var(--text-muted);">${cant} unidades</span>
+  if (dashCatContainer) {
+    const maxStock = Math.max(...Object.values(categoriasMap), 1);
+    if (numCategorias === 0) {
+      dashCatContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">No hay categorías registradas.</p>';
+    } else {
+      dashCatContainer.innerHTML = Object.entries(categoriasMap).map(([cat, cant]) => {
+        const pct = Math.min((cant / maxStock) * 100, 100);
+        return `
+          <div class="cat-row">
+            <div class="cat-labels">
+              <strong>${cat}</strong>
+              <span style="color: var(--text-muted);">${cant} unidades</span>
+            </div>
+            <div class="cat-bar-bg">
+              <div class="cat-bar-fill" style="width: ${pct}%;"></div>
+            </div>
           </div>
-          <div class="cat-bar-bg">
-            <div class="cat-bar-fill" style="width: ${pct}%;"></div>
-          </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
   }
 
   const todasAlertas = productos.filter(p => p.stock_actual <= p.stock_minimo);
-  document.getElementById('dash-alert-count').innerText = todasAlertas.length;
+  const elAlertCount = document.getElementById('dash-alert-count');
+  if (elAlertCount) elAlertCount.innerText = todasAlertas.length;
 
   const alertContainer = document.getElementById('dash-alerts');
-  if (todasAlertas.length === 0) {
-    alertContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin alertas de reposición.</p>';
-  } else {
-    alertContainer.innerHTML = todasAlertas.map(p => `
-      <div class="alert-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--sidebar-border); gap: 1rem;">
-        <div>
-          <div style="font-size:0.85rem; font-weight:700; color: var(--text-dark);">${p.nombre}</div>
-          <div style="font-size:0.72rem; color:var(--text-muted);">Bodega Principal</div>
+  if (alertContainer) {
+    if (todasAlertas.length === 0) {
+      alertContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin alertas de reposición.</p>';
+    } else {
+      alertContainer.innerHTML = todasAlertas.map(p => `
+        <div class="alert-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--sidebar-border); gap: 1rem;">
+          <div>
+            <div style="font-size:0.85rem; font-weight:700; color: var(--text-dark);">${p.nombre}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Bodega Principal</div>
+          </div>
+          <div style="text-align:right; flex-shrink: 0;">
+            <div style="font-size:0.85rem; color:#ef4444; font-weight:700;">${p.stock_actual} unidad</div>
+            <div style="font-size:0.68rem; color:var(--text-muted);">Mín. ${p.stock_minimo}</div>
+          </div>
         </div>
-        <div style="text-align:right; flex-shrink: 0;">
-          <div style="font-size:0.85rem; color:#ef4444; font-weight:700;">${p.stock_actual} unidad</div>
-          <div style="font-size:0.68rem; color:var(--text-muted);">Mín. ${p.stock_minimo}</div>
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
-  // ENLAZADO DIRECTO A SALIDAS/ENTREGAS A OBRA
+  // ENLAZADO DIRECTO Y SEGURO A SALIDAS
   const dashMovContainer = document.getElementById('dash-movements');
-  if (!salidasRecientes || salidasRecientes.length === 0) {
-    dashMovContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin entregas recientes a obras.</p>';
-  } else {
-    dashMovContainer.innerHTML = salidasRecientes.slice(0, 4).map(s => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
-        <div>
-          <span class="badge badge-out">SALIDA</span>
-          <strong style="font-size:0.85rem; margin-left:0.3rem;">${s.productos?.nombre || 'Material'}</strong>
-          <div style="font-size:0.72rem; color:var(--text-muted);">Entrega a: ${s.obra_destino} (Recibe: ${s.solicitante})</div>
+  if (dashMovContainer) {
+    if (!salidasRecientes || salidasRecientes.length === 0) {
+      dashMovContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin entregas recientes a obras.</p>';
+    } else {
+      dashMovContainer.innerHTML = salidasRecientes.slice(0, 4).map(s => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
+          <div>
+            <span class="badge badge-out">SALIDA</span>
+            <strong style="font-size:0.85rem; margin-left:0.3rem;">${s.productos?.nombre || 'Material'}</strong>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Entrega a: ${s.obra_destino || 'Obra'} (Recibe: ${s.solicitante || 'N/A'})</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-size:0.85rem; font-weight:700; color:#ef4444;">-${s.cantidad} un.</div>
+            <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(s.fecha).toLocaleDateString()}</div>
+          </div>
         </div>
-        <div style="text-align:right; flex-shrink:0;">
-          <div style="font-size:0.85rem; font-weight:700; color:#ef4444;">-${s.cantidad} un.</div>
-          <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(s.fecha).toLocaleDateString()}</div>
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 }
 
