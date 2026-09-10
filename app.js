@@ -368,7 +368,7 @@ async function cargarDatos() {
 }
 
 // ==========================================
-// 3. DASHBOARD Y KPIs
+// 3. DASHBOARD Y KPIs (ENLAZADO A SALIDAS EN VIVO)
 // ==========================================
 function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
   document.getElementById('kpi-materiales').innerText = productos.length;
