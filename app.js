@@ -1332,11 +1332,11 @@ async function cargarHistorialRequests() {
           <span class="badge ${badgeClass}" style="${esCancelado ? 'color:#ef4444; border:1px solid #ef4444; background:#fef2f2;' : ''}">${r.estado || 'Pendiente'}</span>
         </td>
         <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
-        <td>
-          <div style="display:flex; flex-direction:column; gap:0.4rem; align-items:flex-start;">
+        <td style="vertical-align: top;">
+          <div style="display: block; text-align: left;">
             
             ${esPendiente ? `
-              <div style="display:flex; gap:0.4rem;">
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 4px;">
                 <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
                   Despachar
                 </button>
@@ -1353,9 +1353,9 @@ async function cargarHistorialRequests() {
             ` : ''}
 
             ${!esPendiente && !esCancelado ? `
-              <span style="font-size:0.7rem; color:var(--text-muted); font-weight:500;">
+              <div style="display: block; margin-top: 4px; font-size: 0.7rem; color: var(--text-muted); white-space: normal; line-height: 1.2;">
                 Despachado por: <b>${r.despachado_por || 'Sistema'}</b>
-              </span>
+              </div>
             ` : ''}
 
           </div>
