@@ -1376,13 +1376,20 @@ async function cargarHistorialRequests() {
     return;
   }
 
+  const superAdmins = [
+    'axell@myeasysolutions.com',
+    'arvin@myeasysolutions.com',
+    'elias@myeasysolutions.com'
+  ];
+
+  const correoUsuario = (usuarioActual && usuarioActual.email) ? usuarioActual.email.trim().toLowerCase() : '';
+  const esSuperAdmin = superAdmins.includes(correoUsuario) || (usuarioActual && usuarioActual.rol === 'SUPERADMIN');
+
   const requestsAsc = [...requests].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const mapaOrdenes = {};
   requestsAsc.forEach((r, index) => {
     mapaOrdenes[r.id] = r.numero_orden || `ORD-${String(index + 1).padStart(4, '0')}`;
   });
-
-  const esSuperAdmin = usuarioActual && usuarioActual.rol === 'SUPERADMIN';
 
   tbody.innerHTML = requests.map(r => {
     const numOrden = mapaOrdenes[r.id];
@@ -1428,7 +1435,7 @@ async function cargarHistorialRequests() {
             ` : ''}
 
             ${esSuperAdmin ? `
-              <button onclick="eliminarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#dc2626; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:0.3rem;">
+              <button onclick="eliminarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#dc2626; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:0.3rem; margin-top:2px;">
                 <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Eliminar Orden
               </button>
             ` : ''}
@@ -1452,7 +1459,16 @@ async function cargarHistorialRequests() {
 
 // ELIMINACIÓN EXCLUSIVA PARA SUPERADMIN CON REINTEGRO AUTOMÁTICO AL INVENTARIO
 async function eliminarRequest(requestId) {
-  if (!usuarioActual || usuarioActual.rol !== 'SUPERADMIN') {
+  const superAdmins = [
+    'axell@myeasysolutions.com',
+    'arvin@myeasysolutions.com',
+    'elias@myeasysolutions.com'
+  ];
+
+  const correoUsuario = (usuarioActual && usuarioActual.email) ? usuarioActual.email.trim().toLowerCase() : '';
+  const esSuperAdmin = superAdmins.includes(correoUsuario) || (usuarioActual && usuarioActual.rol === 'SUPERADMIN');
+
+  if (!esSuperAdmin) {
     return alert('Acceso denegado: Esta acción es exclusiva para SuperAdmins.');
   }
 
@@ -1468,7 +1484,6 @@ async function eliminarRequest(requestId) {
   const confirmacion = confirm(`¿Estás seguro de ELIMINAR permanentemente la solicitud ${numOrden}?\n\nSi la orden estaba Completada o Pendiente, los materiales regresarán automáticamente al inventario.`);
   if (!confirmacion) return;
 
-  // Reintegrar inventario únicamente si la orden NO estaba cancelada previamente
   if (req.estado !== 'Cancelado' && req.request_items) {
     for (const item of req.request_items) {
       const { data: prod } = await _supabase.from('productos').select('stock_actual').eq('id', item.producto_id).single();
@@ -1479,7 +1494,6 @@ async function eliminarRequest(requestId) {
           updated_by: `${usuarioActual.nombre} (SuperAdmin - Reintegro por Eliminación)`
         }).eq('id', item.producto_id);
 
-        // Registrar en movimiento Kardex el reintegro
         await _supabase.from('movimientos').insert([{
           producto_id: item.producto_id,
           tipo: 'ENTRADA',
@@ -1491,7 +1505,6 @@ async function eliminarRequest(requestId) {
     }
   }
 
-  // Borrar items asociados y la orden en Supabase
   await _supabase.from('request_items').delete().eq('request_id', requestId);
   const { error: errDelete } = await _supabase.from('requests').delete().eq('id', requestId);
 
