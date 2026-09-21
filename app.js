@@ -875,7 +875,7 @@ async function cargarHistorialSalidas() {
 }
 
 // ==========================================
-// 7. CESTA DE ENTREGA (CONDUCE CON N.º ORDEN Y N.º DASH)
+// 7. CESTA DE ENTREGA (CON CHECKBOX DE PREPARACIÓN)
 // ==========================================
 function agregarACesta() {
   const select = document.getElementById('cesta-producto-select');
@@ -893,7 +893,7 @@ function agregarACesta() {
   if (existe) {
     existe.cantidad += cantidad;
   } else {
-    cestaMateriales.push({ id: prodId, sku, nombre, categoria, cantidad });
+    cestaMateriales.push({ id: prodId, sku, nombre, categoria, cantidad, picked: false });
   }
 
   document.getElementById('cesta-cantidad-input').value = '';
@@ -903,6 +903,25 @@ function agregarACesta() {
 function removerDeCesta(index) {
   cestaMateriales.splice(index, 1);
   renderizarCesta(cestaNumeroOrdenActual);
+}
+
+function toggleItemPicked(idx, isChecked) {
+  if (cestaMateriales[idx]) {
+    cestaMateriales[idx].picked = isChecked;
+  }
+
+  const row = document.getElementById(`cesta-row-${idx}`);
+  if (row) {
+    if (isChecked) {
+      row.style.opacity = '0.5';
+      row.style.textDecoration = 'line-through';
+      row.style.backgroundColor = '#f1f5f9';
+    } else {
+      row.style.opacity = '1';
+      row.style.textDecoration = 'none';
+      row.style.backgroundColor = 'transparent';
+    }
+  }
 }
 
 function renderizarCesta(numeroOrden = cestaNumeroOrdenActual) {
@@ -915,14 +934,19 @@ function renderizarCesta(numeroOrden = cestaNumeroOrdenActual) {
   if (!tbody) return;
 
   if (cestaMateriales.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>';
     return;
   }
 
   tbody.innerHTML = cestaMateriales.map((item, idx) => {
     const numDash = `${numeroOrden}-DASH-${String(idx + 1).padStart(2, '0')}`;
+    const estaListo = item.picked || false;
+
     return `
-      <tr>
+      <tr id="cesta-row-${idx}" style="transition: all 0.2s ease; ${estaListo ? 'opacity:0.5; text-decoration:line-through; background-color:#f1f5f9;' : ''}">
+        <td class="no-print" style="text-align:center;">
+          <input type="checkbox" onchange="toggleItemPicked(${idx}, this.checked)" ${estaListo ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--header-green);">
+        </td>
         <td><b>${item.sku}</b></td>
         <td>${item.nombre}</td>
         <td>${item.categoria}</td>
@@ -1250,7 +1274,7 @@ async function eliminarProveedor(id) {
 }
 
 // ==========================================
-// 11. MÓDULO REQUESTS / SOLICITUDES CON ELIMINACIÓN SUPERADMIN
+// 11. MÓDULO REQUESTS / SOLICITUDES CON CONSECUTIVO SEGURO
 // ==========================================
 function agregarItemRequest() {
   const select = document.getElementById('req-producto-select');
@@ -1320,8 +1344,24 @@ async function guardarRequest() {
   if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
   if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
 
-  const { count } = await _supabase.from('requests').select('*', { count: 'exact', head: true });
-  const consecutivo = (count || 0) + 1;
+  // Obtener todos los números de orden existentes para hallar el valor máximo real
+  const { data: requestsBD } = await _supabase
+    .from('requests')
+    .select('numero_orden');
+
+  let maxNum = 0;
+  if (requestsBD && requestsBD.length > 0) {
+    requestsBD.forEach(r => {
+      if (r.numero_orden) {
+        const num = parseInt(r.numero_orden.replace(/\D/g, ''), 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+  }
+
+  const consecutivo = maxNum + 1;
   const numOrdenGenerado = `ORD-${String(consecutivo).padStart(4, '0')}`;
 
   const { data: req, error: errReq } = await _supabase.from('requests').insert([{
@@ -1385,14 +1425,8 @@ async function cargarHistorialRequests() {
   const correoUsuario = (usuarioActual && usuarioActual.email) ? usuarioActual.email.trim().toLowerCase() : '';
   const esSuperAdmin = superAdmins.includes(correoUsuario) || (usuarioActual && usuarioActual.rol === 'SUPERADMIN');
 
-  const requestsAsc = [...requests].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-  const mapaOrdenes = {};
-  requestsAsc.forEach((r, index) => {
-    mapaOrdenes[r.id] = r.numero_orden || `ORD-${String(index + 1).padStart(4, '0')}`;
-  });
-
   tbody.innerHTML = requests.map(r => {
-    const numOrden = mapaOrdenes[r.id];
+    const numOrden = r.numero_orden || 'ORD-0000';
     const items = r.request_items || [];
     const resumenMateriales = items.map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
     
@@ -1539,7 +1573,8 @@ async function cargarRequestEnCesta(requestId) {
     sku: item.productos?.sku || 'N/A',
     nombre: item.productos?.nombre || 'Producto',
     categoria: item.productos?.categoria || 'General',
-    cantidad: item.cantidad
+    cantidad: item.cantidad,
+    picked: false
   }));
 
   const numOrden = req.numero_orden || 'ORD-0001';
@@ -1647,14 +1682,8 @@ async function cargarRequestTracking() {
 
   actualizarKpisTracking(requests);
 
-  const requestsAsc = [...requests].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-  const mapaOrdenes = {};
-  requestsAsc.forEach((r, index) => {
-    mapaOrdenes[r.id] = r.numero_orden || `ORD-${String(index + 1).padStart(4, '0')}`;
-  });
-
   tbody.innerHTML = requests.map(r => {
-    const numOrden = mapaOrdenes[r.id];
+    const numOrden = r.numero_orden || 'ORD-0000';
     const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Prod'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
     const estadoTrack = r.estado_seguimiento || 'Aprobado / Listo en Bodega';
 
