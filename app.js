@@ -293,7 +293,7 @@ function mostrarNotificacionFlotante(req) {
         <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
       </div>
       <p style="font-size: 0.78rem; margin: 0; color: var(--text-muted); line-height: 1.3;">
-        <b>${req.created_by || 'WFH'}</b> ha enviado una solicitud para la obra <b>${req.obra_destino}</b>.
+        <b>${req.created_by || 'WFH'}</b> ha enviado la orden <b>${req.numero_orden || ''}</b> para <b>${req.obra_destino}</b>.
       </p>
       <button onclick="irARequests('${toastId}')" style="background: none; border: none; color: var(--primary-blue); font-size: 0.75rem; font-weight: 700; padding: 0; margin-top: 6px; cursor: pointer; text-decoration: underline;">
         Ver en tabla de Requests
@@ -371,16 +371,20 @@ async function cargarDatos() {
 // 3. DASHBOARD Y KPIs
 // ==========================================
 function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
-  document.getElementById('kpi-materiales').innerText = productos.length;
+  const elMat = document.getElementById('kpi-materiales');
+  if (elMat) elMat.innerText = productos.length;
 
-  const totalValor = productos.reduce((sum, p) => sum + (p.stock_actual * p.costo_unitario), 0);
-  document.getElementById('kpi-valor').innerText = `$${totalValor.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const totalValor = productos.reduce((sum, p) => sum + (p.stock_actual * (p.costo_unitario || 0)), 0);
+  const elVal = document.getElementById('kpi-valor');
+  if (elVal) elVal.innerText = `$${totalValor.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const criticos = productos.filter(p => p.stock_actual <= p.stock_minimo && p.stock_actual > 0);
-  document.getElementById('kpi-critico').innerText = criticos.length;
+  const elCrit = document.getElementById('kpi-critico');
+  if (elCrit) elCrit.innerText = criticos.length;
 
   const agotados = productos.filter(p => p.stock_actual === 0);
-  document.getElementById('kpi-agotados').innerText = agotados.length;
+  const elAgot = document.getElementById('kpi-agotados');
+  if (elAgot) elAgot.innerText = agotados.length;
 
   const obrasActivas = obras.filter(o => !o.estado || o.estado.toLowerCase() === 'activa');
   const kpiObras = document.getElementById('kpi-obras-count');
@@ -423,78 +427,89 @@ function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
     }
   });
 
-  document.getElementById('kpi-entradas').innerText = `$${totalEntradas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  document.getElementById('kpi-salidas').innerText = `$${totalSalidas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const elEnt = document.getElementById('kpi-entradas');
+  if (elEnt) elEnt.innerText = `$${totalEntradas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  const elSal = document.getElementById('kpi-salidas');
+  if (elSal) elSal.innerText = `$${totalSalidas.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const categoriasMap = {};
   productos.forEach(p => {
-    categoriasMap[p.categoria] = (categoriasMap[p.categoria] || 0) + p.stock_actual;
+    if (p.categoria) {
+      categoriasMap[p.categoria] = (categoriasMap[p.categoria] || 0) + p.stock_actual;
+    }
   });
 
   const numCategorias = Object.keys(categoriasMap).length;
-  document.getElementById('kpi-cat-count').innerText = `${numCategorias} categorías`;
+  const elCatCount = document.getElementById('kpi-cat-count');
+  if (elCatCount) elCatCount.innerText = `${numCategorias} categorías`;
 
   const dashCatContainer = document.getElementById('dash-categories');
-  const maxStock = Math.max(...Object.values(categoriasMap), 1);
-
-  if (numCategorias === 0) {
-    dashCatContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">No hay categorías registradas.</p>';
-  } else {
-    dashCatContainer.innerHTML = Object.entries(categoriasMap).map(([cat, cant]) => {
-      const pct = Math.min((cant / maxStock) * 100, 100);
-      return `
-        <div class="cat-row">
-          <div class="cat-labels">
-            <strong>${cat}</strong>
-            <span style="color: var(--text-muted);">${cant} unidades</span>
+  if (dashCatContainer) {
+    const maxStock = Math.max(...Object.values(categoriasMap), 1);
+    if (numCategorias === 0) {
+      dashCatContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">No hay categorías registradas.</p>';
+    } else {
+      dashCatContainer.innerHTML = Object.entries(categoriasMap).map(([cat, cant]) => {
+        const pct = Math.min((cant / maxStock) * 100, 100);
+        return `
+          <div class="cat-row">
+            <div class="cat-labels">
+              <strong>${cat}</strong>
+              <span style="color: var(--text-muted);">${cant} unidades</span>
+            </div>
+            <div class="cat-bar-bg">
+              <div class="cat-bar-fill" style="width: ${pct}%;"></div>
+            </div>
           </div>
-          <div class="cat-bar-bg">
-            <div class="cat-bar-fill" style="width: ${pct}%;"></div>
-          </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
   }
 
   const todasAlertas = productos.filter(p => p.stock_actual <= p.stock_minimo);
-  document.getElementById('dash-alert-count').innerText = todasAlertas.length;
+  const elAlertCount = document.getElementById('dash-alert-count');
+  if (elAlertCount) elAlertCount.innerText = todasAlertas.length;
 
   const alertContainer = document.getElementById('dash-alerts');
-  if (todasAlertas.length === 0) {
-    alertContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin alertas de reposición.</p>';
-  } else {
-    alertContainer.innerHTML = todasAlertas.map(p => `
-      <div class="alert-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--sidebar-border); gap: 1rem;">
-        <div>
-          <div style="font-size:0.85rem; font-weight:700; color: var(--text-dark);">${p.nombre}</div>
-          <div style="font-size:0.72rem; color:var(--text-muted);">Bodega Principal</div>
+  if (alertContainer) {
+    if (todasAlertas.length === 0) {
+      alertContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin alertas de reposición.</p>';
+    } else {
+      alertContainer.innerHTML = todasAlertas.map(p => `
+        <div class="alert-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--sidebar-border); gap: 1rem;">
+          <div>
+            <div style="font-size:0.85rem; font-weight:700; color: var(--text-dark);">${p.nombre}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Bodega Principal</div>
+          </div>
+          <div style="text-align:right; flex-shrink: 0;">
+            <div style="font-size:0.85rem; color:#ef4444; font-weight:700;">${p.stock_actual} unidad</div>
+            <div style="font-size:0.68rem; color:var(--text-muted);">Mín. ${p.stock_minimo}</div>
+          </div>
         </div>
-        <div style="text-align:right; flex-shrink: 0;">
-          <div style="font-size:0.85rem; color:#ef4444; font-weight:700;">${p.stock_actual} unidad</div>
-          <div style="font-size:0.68rem; color:var(--text-muted);">Mín. ${p.stock_minimo}</div>
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
-  // ENLAZADO DIRECTO A SALIDAS/ENTREGAS A OBRA
   const dashMovContainer = document.getElementById('dash-movements');
-  if (!salidasRecientes || salidasRecientes.length === 0) {
-    dashMovContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin entregas recientes a obras.</p>';
-  } else {
-    dashMovContainer.innerHTML = salidasRecientes.slice(0, 4).map(s => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
-        <div>
-          <span class="badge badge-out">SALIDA</span>
-          <strong style="font-size:0.85rem; margin-left:0.3rem;">${s.productos?.nombre || 'Material'}</strong>
-          <div style="font-size:0.72rem; color:var(--text-muted);">Entrega a: ${s.obra_destino} (Recibe: ${s.solicitante})</div>
+  if (dashMovContainer) {
+    if (!salidasRecientes || salidasRecientes.length === 0) {
+      dashMovContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin entregas recientes a obras.</p>';
+    } else {
+      dashMovContainer.innerHTML = salidasRecientes.slice(0, 4).map(s => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom:1px solid var(--sidebar-border)">
+          <div>
+            <span class="badge badge-out">SALIDA</span>
+            <strong style="font-size:0.85rem; margin-left:0.3rem;">${s.productos?.nombre || 'Material'}</strong>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Entrega a: ${s.obra_destino || 'Obra'} (Recibe: ${s.solicitante || 'N/A'})</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-size:0.85rem; font-weight:700; color:#ef4444;">-${s.cantidad} un.</div>
+            <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(s.fecha).toLocaleDateString()}</div>
+          </div>
         </div>
-        <div style="text-align:right; flex-shrink:0;">
-          <div style="font-size:0.85rem; font-weight:700; color:#ef4444;">-${s.cantidad} un.</div>
-          <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(s.fecha).toLocaleDateString()}</div>
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 }
 
@@ -830,7 +845,7 @@ async function cargarHistorialSalidas() {
 }
 
 // ==========================================
-// 7. CESTA DE ENTREGA (CONDUCE)
+// 7. CESTA DE ENTREGA (CONDUCE CON N.º ORDEN Y N.º DASH)
 // ==========================================
 function agregarACesta() {
   const select = document.getElementById('cesta-producto-select');
@@ -860,26 +875,35 @@ function removerDeCesta(index) {
   renderizarCesta();
 }
 
-function renderizarCesta() {
+function renderizarCesta(numeroOrden = 'ORD-0000') {
   const tbody = document.getElementById('cesta-items-body');
+  const elNumOrden = document.getElementById('print-num-orden');
+
+  if (elNumOrden) elNumOrden.innerText = numeroOrden;
+
   if (!tbody) return;
 
   if (cestaMateriales.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = cestaMateriales.map((item, idx) => `
-    <tr>
-      <td><b>${item.sku}</b></td>
-      <td>${item.nombre}</td>
-      <td>${item.categoria}</td>
-      <td style="text-align:center; font-weight:bold; font-size:1rem;">${item.cantidad}</td>
-      <td class="no-print" style="text-align:center;">
-        <button onclick="removerDeCesta(${idx})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = cestaMateriales.map((item, idx) => {
+    // Generación dinámica del N.º DASH secuencial y único por producto dentro del conduce
+    const numDash = `DASH-${String(idx + 1).padStart(3, '0')}`;
+    return `
+      <tr>
+        <td><b>${item.sku}</b></td>
+        <td>${item.nombre}</td>
+        <td>${item.categoria}</td>
+        <td style="text-align:center; font-family:monospace; font-weight:bold; color:var(--primary-blue);">${numDash}</td>
+        <td style="text-align:center; font-weight:bold; font-size:1rem;">${item.cantidad}</td>
+        <td class="no-print" style="text-align:center;">
+          <button onclick="removerDeCesta(${idx})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function imprimirConduce() {
@@ -1055,7 +1079,7 @@ async function cargarContratistas(contratistasList) {
       <td>${c.phone || 'N/A'}</td>
       <td>${c.email || 'N/A'}</td>
       <td>${c.ssn || c.itin || 'N/A'}</td>
-      <td>${c.address ? `${c.address}, ${c.city || ''}` : 'N/A'}</td>
+      <td>${c.address ? `${c.address},${c.city || ''}` : 'N/A'}</td>
       <td><span class="badge badge-in">${c.status || 'Active Contractor'}</span></td>
       <td><span style="font-size:0.8rem; color:var(--text-muted);">${c.updated_by || 'Sistema'}</span></td>
       <td>
@@ -1196,7 +1220,7 @@ async function eliminarProveedor(id) {
 }
 
 // ==========================================
-// 11. MÓDULO REQUESTS / SOLICITUDES CON RESERVA Y FILTRO
+// 11. MÓDULO REQUESTS / SOLICITUDES CON GENERACIÓN DE N.º DE ORDEN
 // ==========================================
 function agregarItemRequest() {
   const select = document.getElementById('req-producto-select');
@@ -1258,7 +1282,7 @@ function renderizarTablaRequestTemp() {
   `).join('');
 }
 
-// RESERVA INMEDIATA AL CREAR EL REQUEST
+// GENERACIÓN AUTOMÁTICA Y RESERVA DE N.º DE ORDEN (Ej. ORD-0005)
 async function guardarRequest() {
   const obra = document.getElementById('req-obra').value;
   const contratista = document.getElementById('req-contratista').value;
@@ -1267,7 +1291,13 @@ async function guardarRequest() {
   if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
   if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
 
+  // Obtener el conteo actual para generar el consecutivo de orden
+  const { count, error: errCount } = await _supabase.from('requests').select('*', { count: 'exact', head: true });
+  const consecutivo = (count || 0) + 1;
+  const numOrdenGenerado = `ORD-${String(consecutivo).padStart(4, '0')}`;
+
   const { data: req, error: errReq } = await _supabase.from('requests').insert([{
+    numero_orden: numOrdenGenerado,
     obra_destino: obra,
     solicitante: contratista,
     notas,
@@ -1295,7 +1325,7 @@ async function guardarRequest() {
     }
   }
 
-  alert('¡Request creado con éxito! Los materiales se han reservado del inventario.');
+  alert(`¡Request ${numOrdenGenerado} creado con éxito! Los materiales se han reservado del inventario.`);
   listaRequestTemp = [];
   renderizarTablaRequestTemp();
   document.getElementById('req-obra').value = '';
@@ -1314,11 +1344,12 @@ async function cargarHistorialRequests() {
     .order('fecha', { ascending: false });
 
   if (error || !requests || requests.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay solicitudes registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay solicitudes registradas.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = requests.map(r => {
+  tbody.innerHTML = requests.map((r, index) => {
+    const numOrden = r.numero_orden || `ORD-${String(requests.length - index).padStart(4, '0')}`;
     const items = r.request_items || [];
     const resumenMateriales = items.map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
     
@@ -1331,6 +1362,7 @@ async function cargarHistorialRequests() {
 
     return `
       <tr>
+        <td style="font-family:monospace; font-weight:bold; color:var(--primary-blue);">${numOrden}</td>
         <td>${new Date(r.fecha).toLocaleDateString()} ${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
         <td><b>${r.obra_destino || 'N/A'}</b></td>
         <td>${r.solicitante || 'N/A'}</td>
@@ -1376,7 +1408,7 @@ async function cargarHistorialRequests() {
   }
 }
 
-// CARGAR DETALLES DEL REQUEST DIRECTAMENTE EN LA CESTA
+// CARGAR DETALLES DEL REQUEST CON SU N.º DE ORDEN Y N.º DASH EN LA CESTA
 async function cargarRequestEnCesta(requestId) {
   const { data: req, error } = await _supabase
     .from('requests')
@@ -1402,7 +1434,8 @@ async function cargarRequestEnCesta(requestId) {
     cantidad: item.cantidad
   }));
 
-  renderizarCesta();
+  const numOrden = req.numero_orden || 'ORD-0001';
+  renderizarCesta(numOrden);
   switchTab('movil');
 
   setTimeout(() => {
@@ -1429,7 +1462,7 @@ async function despacharRequest(requestId) {
       obra_destino: req.obra_destino,
       solicitante: req.solicitante,
       cantidad: item.cantidad,
-      motivo: `Request Despachado (Solicitó: ${req.created_by})`,
+      motivo: `Request ${req.numero_orden || ''} Despachado (Solicitó: ${req.created_by})`,
       updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
     }]);
 
@@ -1437,7 +1470,7 @@ async function despacharRequest(requestId) {
       producto_id: item.producto_id,
       tipo: 'SALIDA',
       cantidad: item.cantidad,
-      concepto: `Despacho de Request a: ${req.obra_destino}`,
+      concepto: `Despacho Orden ${req.numero_orden || ''} a: ${req.obra_destino}`,
       updated_by: usuarioActual ? usuarioActual.nombre : 'Gerente Obra'
     }]);
   }
@@ -1449,7 +1482,7 @@ async function despacharRequest(requestId) {
     fecha_despacho: new Date()
   }).eq('id', requestId);
 
-  alert('¡Request despachado! Se ha formalizado el registro en Salidas y pasado al Request Tracking.');
+  alert(`¡Request ${req.numero_orden || ''} despachado con éxito!`);
   cargarDatos();
 }
 
@@ -1486,7 +1519,7 @@ async function cancelarRequest(requestId) {
 }
 
 // ==========================================
-// 12. MÓDULO REQUEST TRACKING (SEGUIMIENTO DE ENTREGAS)
+// 12. MÓDULO REQUEST TRACKING (SEGUIMIENTO DE ENTREGAS CON N.º ORDEN)
 // ==========================================
 async function cargarRequestTracking() {
   const tbody = document.getElementById('tracking-table-body');
@@ -1499,7 +1532,7 @@ async function cargarRequestTracking() {
     .order('fecha_despacho', { ascending: false });
 
   if (error || !requests || requests.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas para seguimiento.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas para seguimiento.</td></tr>';
     actualizarKpisTracking([]);
     return;
   }
@@ -1507,6 +1540,7 @@ async function cargarRequestTracking() {
   actualizarKpisTracking(requests);
 
   tbody.innerHTML = requests.map(r => {
+    const numOrden = r.numero_orden || 'ORD-0000';
     const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Prod'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
     const estadoTrack = r.estado_seguimiento || 'Aprobado / Listo en Bodega';
 
@@ -1517,6 +1551,7 @@ async function cargarRequestTracking() {
 
     return `
       <tr>
+        <td style="font-family:monospace; font-weight:bold; color:var(--primary-blue);">${numOrden}</td>
         <td>
           ${r.fecha_despacho ? new Date(r.fecha_despacho).toLocaleDateString() + ' ' + new Date(r.fecha_despacho).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date(r.fecha).toLocaleDateString()}
         </td>
