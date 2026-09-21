@@ -85,8 +85,11 @@ function iniciarInterfaz() {
     'elias@myeasysolutions.com'
   ];
 
-  if (usuarioActual && usuarioActual.email && superAdmins.includes(usuarioActual.email.toLowerCase())) {
+  const correoActual = (usuarioActual && usuarioActual.email) ? usuarioActual.email.trim().toLowerCase() : '';
+
+  if (superAdmins.includes(correoActual)) {
     usuarioActual.rol = 'SUPERADMIN';
+    localStorage.setItem('sesion_usuario', JSON.stringify(usuarioActual));
   } else if (!usuarioActual.rol) {
     usuarioActual.rol = 'GERENTE';
   }
@@ -1247,7 +1250,7 @@ async function eliminarProveedor(id) {
 }
 
 // ==========================================
-// 11. MÓDULO REQUESTS / SOLICITUDES CON CONSECUTIVO REAL
+// 11. MÓDULO REQUESTS / SOLICITUDES CON ELIMINACIÓN SUPERADMIN
 // ==========================================
 function agregarItemRequest() {
   const select = document.getElementById('req-producto-select');
@@ -1379,6 +1382,8 @@ async function cargarHistorialRequests() {
     mapaOrdenes[r.id] = r.numero_orden || `ORD-${String(index + 1).padStart(4, '0')}`;
   });
 
+  const esSuperAdmin = usuarioActual && usuarioActual.rol === 'SUPERADMIN';
+
   tbody.innerHTML = requests.map(r => {
     const numOrden = mapaOrdenes[r.id];
     const items = r.request_items || [];
@@ -1403,10 +1408,10 @@ async function cargarHistorialRequests() {
         </td>
         <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.created_by || 'WFH'}</span></td>
         <td style="vertical-align: top;">
-          <div style="display: block; text-align: left;">
+          <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start;">
             
             ${esPendiente ? `
-              <div style="display: flex; gap: 0.4rem; margin-bottom: 4px;">
+              <div style="display: flex; gap: 0.4rem;">
                 <button onclick="despacharRequest('${r.id}')" class="btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:var(--header-green);">
                   Despachar
                 </button>
@@ -1422,8 +1427,14 @@ async function cargarHistorialRequests() {
               </button>
             ` : ''}
 
+            ${esSuperAdmin ? `
+              <button onclick="eliminarRequest('${r.id}')" style="padding:0.35rem 0.65rem; font-size:0.75rem; background:#dc2626; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:0.3rem;">
+                <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Eliminar Orden
+              </button>
+            ` : ''}
+
             ${!esPendiente && !esCancelado ? `
-              <div style="display: block; margin-top: 4px; font-size: 0.7rem; color: var(--text-muted); white-space: normal; line-height: 1.2;">
+              <div style="display: block; margin-top: 2px; font-size: 0.7rem; color: var(--text-muted); white-space: normal; line-height: 1.2;">
                 Despachado por: <b>${r.despachado_por || 'Sistema'}</b>
               </div>
             ` : ''}
@@ -1439,7 +1450,60 @@ async function cargarHistorialRequests() {
   }
 }
 
-// CARGAR DETALLES DEL REQUEST EN CESTA CON SU ORDEN Y DASH CORRESPONDIENTE
+// ELIMINACIÓN EXCLUSIVA PARA SUPERADMIN CON REINTEGRO AUTOMÁTICO AL INVENTARIO
+async function eliminarRequest(requestId) {
+  if (!usuarioActual || usuarioActual.rol !== 'SUPERADMIN') {
+    return alert('Acceso denegado: Esta acción es exclusiva para SuperAdmins.');
+  }
+
+  const { data: req, error: errReq } = await _supabase
+    .from('requests')
+    .select('*, request_items(*)')
+    .eq('id', requestId)
+    .single();
+
+  if (errReq || !req) return alert('Error al consultar la orden seleccionada.');
+
+  const numOrden = req.numero_orden || 'esta orden';
+  const confirmacion = confirm(`¿Estás seguro de ELIMINAR permanentemente la solicitud ${numOrden}?\n\nSi la orden estaba Completada o Pendiente, los materiales regresarán automáticamente al inventario.`);
+  if (!confirmacion) return;
+
+  // Reintegrar inventario únicamente si la orden NO estaba cancelada previamente
+  if (req.estado !== 'Cancelado' && req.request_items) {
+    for (const item of req.request_items) {
+      const { data: prod } = await _supabase.from('productos').select('stock_actual').eq('id', item.producto_id).single();
+      if (prod) {
+        const nuevoStock = prod.stock_actual + item.cantidad;
+        await _supabase.from('productos').update({
+          stock_actual: nuevoStock,
+          updated_by: `${usuarioActual.nombre} (SuperAdmin - Reintegro por Eliminación)`
+        }).eq('id', item.producto_id);
+
+        // Registrar en movimiento Kardex el reintegro
+        await _supabase.from('movimientos').insert([{
+          producto_id: item.producto_id,
+          tipo: 'ENTRADA',
+          cantidad: item.cantidad,
+          concepto: `Reintegro por eliminación de Orden ${numOrden}`,
+          updated_by: usuarioActual.nombre
+        }]);
+      }
+    }
+  }
+
+  // Borrar items asociados y la orden en Supabase
+  await _supabase.from('request_items').delete().eq('request_id', requestId);
+  const { error: errDelete } = await _supabase.from('requests').delete().eq('id', requestId);
+
+  if (errDelete) {
+    return alert('Error al eliminar la orden de la base de datos: ' + errDelete.message);
+  }
+
+  alert(`¡La solicitud ${numOrden} ha sido eliminada exitosamente y los inventarios han sido actualizados!`);
+  cargarDatos();
+}
+
+// CARGAR DETALLES DEL REQUEST EN CESTA
 async function cargarRequestEnCesta(requestId) {
   const { data: req, error } = await _supabase
     .from('requests')
