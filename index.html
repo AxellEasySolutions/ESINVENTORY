@@ -38,17 +38,14 @@
   <header class="topbar">
     <h1>Easy Solutions - Sistema de Inventario</h1>
     <div style="display: flex; align-items: center; gap: 1rem;">
-      <!-- INDICADOR DE USUARIOS EN VIVO (PRESENCE) -->
       <div id="online-users-container" style="display: flex; align-items: center; gap: -0.3rem;"></div>
       
-      <!-- MENÚ DESPLEGABLE DE PERFIL DE USUARIO -->
       <div style="position: relative;">
         <button id="user-menu-btn" onclick="toggleUserDropdown()" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 0.35rem 0.85rem; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
           <span id="user-badge">--</span>
           <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
         </button>
 
-        <!-- MENÚ FLOTANTE -->
         <div id="user-dropdown-menu" style="display: none; position: absolute; right: 0; top: 120%; background: #ffffff; color: var(--text-dark); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid var(--border-color); min-width: 190px; z-index: 1000; overflow: hidden;">
           <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); background: #f8fafc;">
             <div id="dropdown-user-name" style="font-weight: 700; font-size: 0.85rem; color: var(--text-dark);">Usuario</div>
@@ -88,9 +85,8 @@
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('obras')"><i data-lucide="folder-kanban"></i> Proyectos / Obras</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('contratistas')"><i data-lucide="users"></i> Contratistas</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Proveedores</button>
-       <button class="nav-btn" data-role="ALL" onclick="switchTab('vencimientos')"><i data-lucide="truck"></i> Request Tracking</button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('vencimientos')"><i data-lucide="truck"></i> Request Tracking</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('movimientos')"><i data-lucide="arrow-left-right"></i> Kardex</button>
-        <!-- BOTÓN ACCESIBLE PARA TODOS LOS USUARIOS -->
         <button class="nav-btn" data-role="ALL" onclick="switchTab('etiquetas')"><i data-lucide="clipboard-list"></i> Requests / Solicitudes</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('reportes')"><i data-lucide="bar-chart-3"></i> Reportes</button>
       </nav>
@@ -213,7 +209,7 @@
                   <h3>Movimientos recientes</h3>
                   <p>Salidas y devoluciones hacia obra</p>
                 </div>
-                <button class="btn-link" data-role="ADMIN" onclick="switchTab('movimientos')">Ver historial</button>
+                <button class="btn-link" onclick="switchTab('salidas')">Ver historial</button>
               </div>
               <div id="dash-movements" class="movements-list"></div>
             </div>
@@ -262,7 +258,7 @@
         </table>
       </section>
 
-      <!-- CESTA DE ENTREGA CON DROPDOWNS -->
+      <!-- CESTA DE ENTREGA CON N.º DE ORDEN Y N.º DASH -->
       <section id="tab-movil" class="tab-content">
         <div class="form-card no-print">
           <h3>Generar Conduce de Entrega de Materiales</h3>
@@ -310,6 +306,13 @@
               <h2 style="color:var(--header-bg); font-size:1.4rem;">CONDUCE DE ENTREGA DE MATERIALES</h2>
               <p style="color:var(--text-muted); font-size:0.85rem;">Easy Solutions - Control de Inventario</p>
             </div>
+            
+            <!-- CONTENEDOR DE N.º DE ORDEN EN EL ENCABEZADO -->
+            <div style="text-align:center; background:#f1f5f9; padding:0.5rem 1.25rem; border-radius:8px; border:1px solid var(--border-color);">
+              <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; display:block; letter-spacing:0.5px;">N.º DE ORDEN</span>
+              <strong id="print-num-orden" style="font-size:1.2rem; color:var(--primary-blue); font-family:monospace;">ORD-0000</strong>
+            </div>
+
             <div style="text-align:right;">
               <strong style="font-size:0.9rem;">Fecha: <span id="print-fecha">--/--/----</span></strong>
             </div>
@@ -336,12 +339,14 @@
                 <th>SKU</th>
                 <th>Material / Descripción</th>
                 <th>Categoría</th>
+                <!-- COLUMNA N.º DASH PARA IDENTIFICACIÓN ÚNICA -->
+                <th style="text-align:center; color:var(--primary-blue);">N.º DASH</th>
                 <th style="text-align:center;">Cantidad Entregada</th>
                 <th class="no-print" style="text-align:center;">Acción</th>
               </tr>
             </thead>
             <tbody id="cesta-items-body">
-              <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>
+              <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>
             </tbody>
           </table>
 
@@ -364,7 +369,7 @@
         </div>
       </section>
 
-      <!-- ENTRADAS / COMPRAS CON DROPDOWNS -->
+      <!-- ENTRADAS / COMPRAS -->
       <section id="tab-compras" class="tab-content">
         <div class="form-card">
           <h3>Registrar Compra de Material (Entrada)</h3>
@@ -453,7 +458,7 @@
         </div>
       </section>
 
-      <!-- SALIDAS / ENTREGAS CON DROPDOWNS -->
+      <!-- SALIDAS / ENTREGAS -->
       <section id="tab-salidas" class="tab-content">
         <div class="form-card">
           <h3 style="background: var(--primary-blue);">Registrar Salida / Entrega de Material</h3>
@@ -552,7 +557,6 @@
         <div class="form-card">
           <h3 style="background: var(--primary-blue);">Registrar Nuevo Proyecto / Obra</h3>
           <form id="obra-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
-            
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
               <div>
                 <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Dirección / Nombre de la Obra</label>
@@ -588,7 +592,6 @@
                 <i data-lucide="folder-plus"></i> Guardar Proyecto / Obra
               </button>
             </div>
-
           </form>
         </div>
 
@@ -608,9 +611,7 @@
                 <th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="obras-table-body">
-              <!-- Renderizado dinámico -->
-            </tbody>
+            <tbody id="obras-table-body"></tbody>
           </table>
         </div>
       </section>
@@ -623,7 +624,6 @@
           </h3>
           
           <form id="contractor-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
                 <label style="font-size:0.75rem; font-weight:700; color:#3b5998;">First Name</label>
@@ -723,7 +723,6 @@
                 <i data-lucide="user-check"></i> Save Contractor
               </button>
             </div>
-
           </form>
         </div>
 
@@ -742,9 +741,7 @@
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="contractors-table-body">
-              <!-- Carga dinámica -->
-            </tbody>
+            <tbody id="contractors-table-body"></tbody>
           </table>
         </div>
       </section>
@@ -805,7 +802,6 @@
                 <i data-lucide="save"></i> Guardar Proveedor
               </button>
             </div>
-
           </form>
         </div>
 
@@ -824,66 +820,61 @@
                 <th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="providers-table-body">
-              <!-- Carga dinámica -->
+            <tbody id="providers-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PESTAÑA: REQUEST TRACKING -->
+      <section id="tab-vencimientos" class="tab-content">
+        <div class="control-banner" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+          <div>
+            <span class="sub-tag" style="background: rgba(255,255,255,0.15); color: #fff;">SEGUIMIENTO DE ENTREGAS</span>
+            <h2>Request Tracking Center</h2>
+            <p>Monitoreo en tiempo real del estado de despacho y transporte de solicitudes aprobadas.</p>
+          </div>
+        </div>
+
+        <div class="kpi-grid" style="margin-top: 1.5rem;">
+          <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
+            <span class="kpi-title">LISTOS EN BODEGA</span>
+            <h3 id="track-kpi-listos" style="color:#3b82f6;">0</h3>
+            <span class="kpi-sub">Empaquetados / Por salir</span>
+          </div>
+          <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
+            <span class="kpi-title">EN TRÁNSITO</span>
+            <h3 id="track-kpi-transito" style="color:#f59e0b;">0</h3>
+            <span class="kpi-sub">En camino a la obra</span>
+          </div>
+          <div class="kpi-card" style="border-left: 4px solid #10b981;">
+            <span class="kpi-title">ENTREGADOS</span>
+            <h3 id="track-kpi-entregados" style="color:#10b981;">0</h3>
+            <span class="kpi-sub">En el punto de obra</span>
+          </div>
+        </div>
+
+        <div class="data-section" style="margin-top: 1.5rem;">
+          <h3>Solicitudes Aprobadas en Seguimiento</h3>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>N.º Orden</th>
+                <th>Fecha Aprobación</th>
+                <th>Obra Destino</th>
+                <th>Contratista</th>
+                <th>Materiales</th>
+                <th>Despachado Por</th>
+                <th>Estado de Entrega</th>
+                <th>Acción de Rastreo</th>
+              </tr>
+            </thead>
+            <tbody id="tracking-table-body">
+              <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas en seguimiento.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- PESTAÑA: REQUEST TRACKING (SEGUIMIENTO LOGÍSTICO) -->
-<section id="tab-vencimientos" class="tab-content">
-  
-  <div class="control-banner" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
-    <div>
-      <span class="sub-tag" style="background: rgba(255,255,255,0.15); color: #fff;">SEGUIMIENTO DE ENTREGAS</span>
-      <h2>Request Tracking Center</h2>
-      <p>Monitoreo en tiempo real del estado de despacho y transporte de solicitudes aprobadas.</p>
-    </div>
-  </div>
-
-  <!-- TARJETAS DE RESUMEN LOGÍSTICO (KPIs) -->
-  <div class="kpi-grid" style="margin-top: 1.5rem;">
-    <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-      <span class="kpi-title">LISTOS EN BODEGA</span>
-      <h3 id="track-kpi-listos" style="color:#3b82f6;">0</h3>
-      <span class="kpi-sub">Empaquetados / Por salir</span>
-    </div>
-    <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
-      <span class="kpi-title">EN TRÁNSITO</span>
-      <h3 id="track-kpi-transito" style="color:#f59e0b;">0</h3>
-      <span class="kpi-sub">En camino a la obra</span>
-    </div>
-    <div class="kpi-card" style="border-left: 4px solid #10b981;">
-      <span class="kpi-title">ENTREGADOS</span>
-      <h3 id="track-kpi-entregados" style="color:#10b981;">0</h3>
-      <span class="kpi-sub">En el punto de obra</span>
-    </div>
-  </div>
-
-  <!-- TABLA DE SEGUIMIENTO EN VIVO -->
-  <div class="data-section" style="margin-top: 1.5rem;">
-    <h3>Solicitudes Aprobadas en Seguimiento</h3>
-    <table class="custom-table">
-      <thead>
-        <tr>
-          <th>Fecha Aprobación</th>
-          <th>Obra Destino</th>
-          <th>Contratista</th>
-          <th>Materiales</th>
-          <th>Despachado Por</th>
-          <th>Estado de Entrega</th>
-          <th>Acción de Rastreo</th>
-        </tr>
-      </thead>
-      <tbody id="tracking-table-body">
-        <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas en seguimiento.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-</section>
-      
       <!-- PESTAÑA: REQUESTS / SOLICITUDES -->
       <section id="tab-etiquetas" class="tab-content">
         <div class="form-card">
@@ -955,6 +946,7 @@
           <table class="custom-table">
             <thead>
               <tr>
+                <th>N.º Orden</th>
                 <th>Fecha</th>
                 <th>Obra Destino</th>
                 <th>Contratista</th>
@@ -964,9 +956,7 @@
                 <th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="requests-table-body">
-              <!-- Carga dinámica -->
-            </tbody>
+            <tbody id="requests-table-body"></tbody>
           </table>
         </div>
       </section>
@@ -1022,7 +1012,6 @@
     </div>
   </div>
 
-  <!-- CONTENEDOR DE NOTIFICACIONES FLOTANTES PERSISTENTES (TOAST) -->
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
   <script src="app.js"></script>
