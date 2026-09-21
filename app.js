@@ -934,7 +934,7 @@ function renderizarCesta(numeroOrden = cestaNumeroOrdenActual) {
   if (!tbody) return;
 
   if (cestaMateriales.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>';
     return;
   }
 
@@ -944,16 +944,18 @@ function renderizarCesta(numeroOrden = cestaNumeroOrdenActual) {
 
     return `
       <tr id="cesta-row-${idx}" style="transition: all 0.2s ease; ${estaListo ? 'opacity:0.5; text-decoration:line-through; background-color:#f1f5f9;' : ''}">
-        <td class="no-print" style="text-align:center;">
-          <input type="checkbox" onchange="toggleItemPicked(${idx}, this.checked)" ${estaListo ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--header-green);">
-        </td>
         <td><b>${item.sku}</b></td>
         <td>${item.nombre}</td>
         <td>${item.categoria}</td>
         <td style="text-align:center; font-family:monospace; font-weight:bold; color:var(--primary-blue); font-size:0.85rem;">${numDash}</td>
         <td style="text-align:center; font-weight:bold; font-size:1rem;">${item.cantidad}</td>
         <td class="no-print" style="text-align:center;">
-          <button onclick="removerDeCesta(${idx})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+          <div style="display:inline-flex; align-items:center; gap:0.75rem; justify-content:center;">
+            <button onclick="removerDeCesta(${idx})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
+            <label title="Marcar como listo en bodega" style="display:inline-flex; align-items:center; cursor:pointer;">
+              <input type="checkbox" onchange="toggleItemPicked(${idx}, this.checked)" ${estaListo ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--header-green);">
+            </label>
+          </div>
         </td>
       </tr>
     `;
