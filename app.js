@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 1. AUTENTICACIÓN Y CONTROL DE ROLES
+// 1. AUTENTICACIÓN Y CONTROL DE ROLES (3 NIVELES)
 // ==========================================
 async function iniciarSesion(e) {
   e.preventDefault();
@@ -79,13 +79,29 @@ function cerrarSesion() {
 function iniciarInterfaz() {
   document.getElementById('login-screen').style.display = 'none';
   
+  const superAdmins = [
+    'axell@myeasysolutions.com',
+    'arvin@myeasysolutions.com',
+    'elias@myeasysolutions.com'
+  ];
+
+  if (usuarioActual && usuarioActual.email && superAdmins.includes(usuarioActual.email.toLowerCase())) {
+    usuarioActual.rol = 'SUPERADMIN';
+  } else if (!usuarioActual.rol) {
+    usuarioActual.rol = 'GERENTE';
+  }
+
+  let rolEtiqueta = 'Gerente de Obra';
+  if (usuarioActual.rol === 'SUPERADMIN') rolEtiqueta = 'SuperAdmin';
+  if (usuarioActual.rol === 'ADMIN') rolEtiqueta = 'Administrador';
+
   const badge = document.getElementById('user-badge');
-  if (badge) badge.innerText = `${usuarioActual.nombre} (${usuarioActual.rol === 'ADMIN' ? 'Admin' : 'Gerente Obra'})`;
+  if (badge) badge.innerText = `${usuarioActual.nombre} (${rolEtiqueta})`;
 
   const elName = document.getElementById('dropdown-user-name');
   const elRole = document.getElementById('dropdown-user-role');
   if (elName) elName.innerText = usuarioActual.nombre;
-  if (elRole) elRole.innerText = usuarioActual.rol === 'ADMIN' ? 'Administrador' : 'Gerente de Obra';
+  if (elRole) elRole.innerText = rolEtiqueta;
 
   aplicarPermisosRol();
   cargarDatos();
@@ -94,10 +110,20 @@ function iniciarInterfaz() {
 }
 
 function aplicarPermisosRol() {
-  const esAdmin = usuarioActual.rol === 'ADMIN';
+  const rol = usuarioActual ? usuarioActual.rol : 'GERENTE';
+  const esSuperAdmin = rol === 'SUPERADMIN';
+  const esAdmin = rol === 'ADMIN' || esSuperAdmin;
+
+  document.querySelectorAll('[data-role="SUPERADMIN"]').forEach(el => {
+    el.style.display = esSuperAdmin ? '' : 'none';
+  });
 
   document.querySelectorAll('[data-role="ADMIN"]').forEach(el => {
     el.style.display = esAdmin ? '' : 'none';
+  });
+
+  document.querySelectorAll('[data-role="ALL"]').forEach(el => {
+    el.style.display = '';
   });
 
   const btnNuevoProd = document.getElementById('btn-nuevo-prod-header');
@@ -846,7 +872,7 @@ async function cargarHistorialSalidas() {
 }
 
 // ==========================================
-// 7. CESTA DE ENTREGA (N.º ORDEN Y N.º DASH)
+// 7. CESTA DE ENTREGA (CONDUCE CON N.º ORDEN Y N.º DASH)
 // ==========================================
 function agregarACesta() {
   const select = document.getElementById('cesta-producto-select');
@@ -891,7 +917,6 @@ function renderizarCesta(numeroOrden = cestaNumeroOrdenActual) {
   }
 
   tbody.innerHTML = cestaMateriales.map((item, idx) => {
-    // Generación del N.º DASH único por renglón
     const numDash = `${numeroOrden}-DASH-${String(idx + 1).padStart(2, '0')}`;
     return `
       <tr>
@@ -1292,7 +1317,6 @@ async function guardarRequest() {
   if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
   if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
 
-  // Obtener conteo exacto de registros en BD para generar N.° de Orden real
   const { count } = await _supabase.from('requests').select('*', { count: 'exact', head: true });
   const consecutivo = (count || 0) + 1;
   const numOrdenGenerado = `ORD-${String(consecutivo).padStart(4, '0')}`;
@@ -1349,7 +1373,6 @@ async function cargarHistorialRequests() {
     return;
   }
 
-  // Ordenar ascendentemente por fecha para derivar el orden consecutivo histórico correcto si faltara en BD
   const requestsAsc = [...requests].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const mapaOrdenes = {};
   requestsAsc.forEach((r, index) => {
@@ -1442,7 +1465,6 @@ async function cargarRequestEnCesta(requestId) {
     cantidad: item.cantidad
   }));
 
-  // Consultar N.º de Orden de referencia
   const numOrden = req.numero_orden || 'ORD-0001';
   renderizarCesta(numOrden);
   switchTab('movil');
@@ -1548,8 +1570,14 @@ async function cargarRequestTracking() {
 
   actualizarKpisTracking(requests);
 
+  const requestsAsc = [...requests].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const mapaOrdenes = {};
+  requestsAsc.forEach((r, index) => {
+    mapaOrdenes[r.id] = r.numero_orden || `ORD-${String(index + 1).padStart(4, '0')}`;
+  });
+
   tbody.innerHTML = requests.map(r => {
-    const numOrden = r.numero_orden || 'ORD-0000';
+    const numOrden = mapaOrdenes[r.id];
     const resumenMateriales = (r.request_items || []).map(i => `${i.productos?.nombre || 'Prod'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
     const estadoTrack = r.estado_seguimiento || 'Aprobado / Listo en Bodega';
 
