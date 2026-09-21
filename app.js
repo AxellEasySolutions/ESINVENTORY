@@ -5,6 +5,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let cestaMateriales = [];
+let cestaNumeroOrdenActual = 'ORD-0000';
 let listaRequestTemp = [];
 let usuarioActual = null;
 let productoEditandoId = null;
@@ -293,7 +294,7 @@ function mostrarNotificacionFlotante(req) {
         <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
       </div>
       <p style="font-size: 0.78rem; margin: 0; color: var(--text-muted); line-height: 1.3;">
-        <b>${req.created_by || 'WFH'}</b> ha enviado la orden <b>${req.numero_orden || ''}</b> para <b>${req.obra_destino}</b>.
+        <b>${req.created_by || 'WFH'}</b> ha enviado la solicitud <b>${req.numero_orden || ''}</b> para <b>${req.obra_destino}</b>.
       </p>
       <button onclick="irARequests('${toastId}')" style="background: none; border: none; color: var(--primary-blue); font-size: 0.75rem; font-weight: 700; padding: 0; margin-top: 6px; cursor: pointer; text-decoration: underline;">
         Ver en tabla de Requests
@@ -368,7 +369,7 @@ async function cargarDatos() {
 }
 
 // ==========================================
-// 3. DASHBOARD Y KPIs
+// 3. DASHBOARD Y KPIs (PROTEGIDO)
 // ==========================================
 function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
   const elMat = document.getElementById('kpi-materiales');
@@ -845,7 +846,7 @@ async function cargarHistorialSalidas() {
 }
 
 // ==========================================
-// 7. CESTA DE ENTREGA (CONDUCE CON N.º ORDEN Y N.º DASH)
+// 7. CESTA DE ENTREGA (N.º ORDEN Y N.º DASH)
 // ==========================================
 function agregarACesta() {
   const select = document.getElementById('cesta-producto-select');
@@ -867,15 +868,16 @@ function agregarACesta() {
   }
 
   document.getElementById('cesta-cantidad-input').value = '';
-  renderizarCesta();
+  renderizarCesta(cestaNumeroOrdenActual);
 }
 
 function removerDeCesta(index) {
   cestaMateriales.splice(index, 1);
-  renderizarCesta();
+  renderizarCesta(cestaNumeroOrdenActual);
 }
 
-function renderizarCesta(numeroOrden = 'ORD-0000') {
+function renderizarCesta(numeroOrden = cestaNumeroOrdenActual) {
+  cestaNumeroOrdenActual = numeroOrden;
   const tbody = document.getElementById('cesta-items-body');
   const elNumOrden = document.getElementById('print-num-orden');
 
@@ -889,14 +891,14 @@ function renderizarCesta(numeroOrden = 'ORD-0000') {
   }
 
   tbody.innerHTML = cestaMateriales.map((item, idx) => {
-    // Generación dinámica del N.º DASH secuencial y único por producto dentro del conduce
-    const numDash = `DASH-${String(idx + 1).padStart(3, '0')}`;
+    // Generación del N.º DASH único por renglón
+    const numDash = `${numeroOrden}-DASH-${String(idx + 1).padStart(2, '0')}`;
     return `
       <tr>
         <td><b>${item.sku}</b></td>
         <td>${item.nombre}</td>
         <td>${item.categoria}</td>
-        <td style="text-align:center; font-family:monospace; font-weight:bold; color:var(--primary-blue);">${numDash}</td>
+        <td style="text-align:center; font-family:monospace; font-weight:bold; color:var(--primary-blue); font-size:0.85rem;">${numDash}</td>
         <td style="text-align:center; font-weight:bold; font-size:1rem;">${item.cantidad}</td>
         <td class="no-print" style="text-align:center;">
           <button onclick="removerDeCesta(${idx})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-weight:600;">Eliminar</button>
@@ -1220,7 +1222,7 @@ async function eliminarProveedor(id) {
 }
 
 // ==========================================
-// 11. MÓDULO REQUESTS / SOLICITUDES CON GENERACIÓN DE N.º DE ORDEN
+// 11. MÓDULO REQUESTS / SOLICITUDES CON CONSECUTIVO REAL
 // ==========================================
 function agregarItemRequest() {
   const select = document.getElementById('req-producto-select');
@@ -1282,7 +1284,6 @@ function renderizarTablaRequestTemp() {
   `).join('');
 }
 
-// GENERACIÓN AUTOMÁTICA Y RESERVA DE N.º DE ORDEN (Ej. ORD-0005)
 async function guardarRequest() {
   const obra = document.getElementById('req-obra').value;
   const contratista = document.getElementById('req-contratista').value;
@@ -1291,8 +1292,8 @@ async function guardarRequest() {
   if (!obra || !contratista) return alert('Por favor seleccione la obra y el contratista.');
   if (listaRequestTemp.length === 0) return alert('Agregue al menos un material a la solicitud.');
 
-  // Obtener el conteo actual para generar el consecutivo de orden
-  const { count, error: errCount } = await _supabase.from('requests').select('*', { count: 'exact', head: true });
+  // Obtener conteo exacto de registros en BD para generar N.° de Orden real
+  const { count } = await _supabase.from('requests').select('*', { count: 'exact', head: true });
   const consecutivo = (count || 0) + 1;
   const numOrdenGenerado = `ORD-${String(consecutivo).padStart(4, '0')}`;
 
@@ -1325,7 +1326,7 @@ async function guardarRequest() {
     }
   }
 
-  alert(`¡Request ${numOrdenGenerado} creado con éxito! Los materiales se han reservado del inventario.`);
+  alert(`¡Request ${numOrdenGenerado} creado con éxito!`);
   listaRequestTemp = [];
   renderizarTablaRequestTemp();
   document.getElementById('req-obra').value = '';
@@ -1348,8 +1349,15 @@ async function cargarHistorialRequests() {
     return;
   }
 
-  tbody.innerHTML = requests.map((r, index) => {
-    const numOrden = r.numero_orden || `ORD-${String(requests.length - index).padStart(4, '0')}`;
+  // Ordenar ascendentemente por fecha para derivar el orden consecutivo histórico correcto si faltara en BD
+  const requestsAsc = [...requests].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const mapaOrdenes = {};
+  requestsAsc.forEach((r, index) => {
+    mapaOrdenes[r.id] = r.numero_orden || `ORD-${String(index + 1).padStart(4, '0')}`;
+  });
+
+  tbody.innerHTML = requests.map(r => {
+    const numOrden = mapaOrdenes[r.id];
     const items = r.request_items || [];
     const resumenMateriales = items.map(i => `${i.productos?.nombre || 'Producto'}: <b>${i.cantidad} un.</b>`).join('<br>') || 'Sin ítems';
     
@@ -1362,7 +1370,7 @@ async function cargarHistorialRequests() {
 
     return `
       <tr>
-        <td style="font-family:monospace; font-weight:bold; color:var(--primary-blue);">${numOrden}</td>
+        <td style="font-family:monospace; font-weight:bold; color:var(--primary-blue); font-size:0.9rem;">${numOrden}</td>
         <td>${new Date(r.fecha).toLocaleDateString()} ${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
         <td><b>${r.obra_destino || 'N/A'}</b></td>
         <td>${r.solicitante || 'N/A'}</td>
@@ -1408,7 +1416,7 @@ async function cargarHistorialRequests() {
   }
 }
 
-// CARGAR DETALLES DEL REQUEST CON SU N.º DE ORDEN Y N.º DASH EN LA CESTA
+// CARGAR DETALLES DEL REQUEST EN CESTA CON SU ORDEN Y DASH CORRESPONDIENTE
 async function cargarRequestEnCesta(requestId) {
   const { data: req, error } = await _supabase
     .from('requests')
@@ -1434,6 +1442,7 @@ async function cargarRequestEnCesta(requestId) {
     cantidad: item.cantidad
   }));
 
+  // Consultar N.º de Orden de referencia
   const numOrden = req.numero_orden || 'ORD-0001';
   renderizarCesta(numOrden);
   switchTab('movil');
@@ -1519,7 +1528,7 @@ async function cancelarRequest(requestId) {
 }
 
 // ==========================================
-// 12. MÓDULO REQUEST TRACKING (SEGUIMIENTO DE ENTREGAS CON N.º ORDEN)
+// 12. MÓDULO REQUEST TRACKING
 // ==========================================
 async function cargarRequestTracking() {
   const tbody = document.getElementById('tracking-table-body');
@@ -1551,7 +1560,7 @@ async function cargarRequestTracking() {
 
     return `
       <tr>
-        <td style="font-family:monospace; font-weight:bold; color:var(--primary-blue);">${numOrden}</td>
+        <td style="font-family:monospace; font-weight:bold; color:var(--primary-blue); font-size:0.9rem;">${numOrden}</td>
         <td>
           ${r.fecha_despacho ? new Date(r.fecha_despacho).toLocaleDateString() + ' ' + new Date(r.fecha_despacho).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : new Date(r.fecha).toLocaleDateString()}
         </td>
