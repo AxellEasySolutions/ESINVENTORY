@@ -9,6 +9,8 @@ let cestaNumeroOrdenActual = 'ORD-0000';
 let listaRequestTemp = [];
 let usuarioActual = null;
 let productoEditandoId = null;
+let comprasContabilidad = [];
+let compraEditandoTaxId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   lucide.createIcons();
@@ -25,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const purchaseForm = document.getElementById('purchase-form');
   if (purchaseForm) purchaseForm.addEventListener('submit', registrarCompra);
+  inicializarControlesTaxes();
 
   const dispatchForm = document.getElementById('dispatch-form');
   if (dispatchForm) dispatchForm.addEventListener('submit', registrarSalidaModule);
@@ -699,15 +702,74 @@ function poblarSelectProveedores(proveedores) {
 // ==========================================
 // 5. ENTRADAS / COMPRAS
 // ==========================================
-function calcularTotalCompra() {
-  const cant = Number(document.getElementById('compra-cantidad').value) || 0;
+// Helpers financieros. Los cálculos se realizan en centavos para evitar errores de coma flotante.
+function dineroTax(centavos) {
+  return `$${(centavos / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function centsTax(valor) {
+  return Math.round((Number(valor) || 0) * 100);
+}
+
+function fechaLocalISO() {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+}
+
+function inicializarControlesTaxes() {
+  const fecha = document.getElementById('compra-fecha');
+  const ciclo = document.getElementById('compra-ciclo-tax');
+  const filtro = document.getElementById('tax-ciclo-filtro');
+  const hoy = fechaLocalISO();
+  if (fecha) fecha.value = hoy;
+  if (ciclo) ciclo.value = hoy.slice(0, 7);
+  if (filtro) filtro.value = hoy.slice(0, 7);
+  actualizarModoTax();
+}
+
+function sincronizarCicloTax() {
+  const fecha = document.getElementById('compra-fecha')?.value;
+  const ciclo = document.getElementById('compra-ciclo-tax');
+  if (fecha && ciclo) ciclo.value = fecha.slice(0, 7);
+}
+
+function actualizarModoTax() {
+  const modo = document.getElementById('compra-tax-modo')?.value || 'PORCENTAJE';
+  const porcentaje = document.getElementById('compra-tax-porcentaje');
+  const monto = document.getElementById('compra-tax-monto');
+  if (porcentaje) porcentaje.disabled = modo !== 'PORCENTAJE';
+  if (monto) monto.disabled = modo !== 'MONTO';
+  calcularTotalCompra();
+}
+
+function calcularDesgloseCompra(cantidad, costoUnitario, modo, porcentaje, taxFijo) {
+  const subtotal = Math.round(cantidad * centsTax(costoUnitario));
+  const impuestos = modo === 'MONTO'
+    ? centsTax(taxFijo)
+    : Math.round(subtotal * (porcentaje / 100));
+  return { subtotal, impuestos, total: subtotal + impuestos };
+}
+
+function obtenerDesgloseFormularioCompra() {
+  const cantidad = Number(document.getElementById('compra-cantidad').value) || 0;
   const costo = Number(document.getElementById('compra-costo').value) || 0;
-  const total = cant * costo;
-  
-  const display = document.getElementById('compra-total-display');
-  if (display) {
-    display.innerText = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
+  const modo = document.getElementById('compra-tax-modo')?.value || 'PORCENTAJE';
+  const porcentaje = Number(document.getElementById('compra-tax-porcentaje')?.value) || 0;
+  const monto = Number(document.getElementById('compra-tax-monto')?.value) || 0;
+  return calcularDesgloseCompra(cantidad, costo, modo, porcentaje, monto);
+}
+
+function calcularTotalCompra() {
+  const desglose = obtenerDesgloseFormularioCompra();
+  const subtotalEl = document.getElementById('compra-subtotal-display');
+  const taxesEl = document.getElementById('compra-tax-display');
+  const totalEl = document.getElementById('compra-total-display');
+  if (subtotalEl) subtotalEl.innerText = dineroTax(desglose.subtotal);
+  if (taxesEl) taxesEl.innerText = dineroTax(desglose.impuestos);
+  if (totalEl) totalEl.innerText = dineroTax(desglose.total);
 }
 
 async function registrarCompra(e) {
@@ -715,20 +777,41 @@ async function registrarCompra(e) {
 
   const prodId = document.getElementById('compra-producto').value;
   const proveedor = document.getElementById('compra-proveedor').value;
-  const factura = document.getElementById('compra-factura').value;
+  const factura = document.getElementById('compra-factura').value.trim();
   const cantidad = Number(document.getElementById('compra-cantidad').value);
   const costoUnitario = Number(document.getElementById('compra-costo').value);
-  const total = cantidad * costoUnitario;
   const estadoPago = document.getElementById('compra-estado-pago').value;
   const codigoLote = document.getElementById('compra-lote').value;
   const vencProd = document.getElementById('compra-venc-prod').value || null;
   const notas = document.getElementById('compra-notas').value;
+  const fechaCompra = document.getElementById('compra-fecha').value;
+  const ciclo = document.getElementById('compra-ciclo-tax').value;
+  const modoTax = document.getElementById('compra-tax-modo').value;
+  const porcentajeTax = Number(document.getElementById('compra-tax-porcentaje').value) || 0;
+  const montoTax = Number(document.getElementById('compra-tax-monto').value) || 0;
+
+  if (!prodId || !proveedor || !factura || !Number.isInteger(cantidad) || cantidad <= 0 ||
+      !Number.isFinite(costoUnitario) || costoUnitario < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(fechaCompra) ||
+      !/^\d{4}-(0[1-9]|1[0-2])$/.test(ciclo)) {
+    return alert('Complete la compra, su fecha y el ciclo contable con datos válidos.');
+  }
+  if (modoTax === 'PORCENTAJE' && (!Number.isFinite(porcentajeTax) || porcentajeTax < 0 || porcentajeTax > 100)) {
+    return alert('El porcentaje de Taxes debe estar entre 0% y 100%.');
+  }
+  if (modoTax === 'MONTO' && (!Number.isFinite(montoTax) || montoTax < 0)) {
+    return alert('El monto de Taxes no puede ser negativo.');
+  }
+
+  const valores = calcularDesgloseCompra(cantidad, costoUnitario, modoTax, porcentajeTax, montoTax);
+  const total = valores.subtotal / 100; // Columna original conservada: total ANTES de impuestos.
+  const importeTax = valores.impuestos / 100;
+  const totalConTax = valores.total / 100;
 
   const { data: prod, error: errProd } = await _supabase.from('productos').select('stock_actual').eq('id', prodId).single();
-  if (errProd) return alert('Error al consultar el producto seleccionado');
+  if (errProd) return alert('Error al consultar el producto seleccionado: ' + errProd.message);
 
-  const nuevoStock = prod.stock_actual + cantidad;
-
+  const nuevoStock = Number(prod.stock_actual) + cantidad;
+  const autor = usuarioActual ? usuarioActual.nombre : 'Sistema';
   const { error: errCompra } = await _supabase.from('compras').insert([{
     producto_id: prodId,
     proveedor,
@@ -740,61 +823,308 @@ async function registrarCompra(e) {
     codigo_lote: codigoLote,
     vencimiento_producto: vencProd,
     notas,
-    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
+    fecha_compra: fechaCompra,
+    tax_tipo: modoTax,
+    tax_porcentaje: modoTax === 'PORCENTAJE' ? porcentajeTax : 0,
+    tax_monto: importeTax,
+    total_con_tax: totalConTax,
+    tax_ciclo: ciclo,
+    tax_estado: 'PENDIENTE', // Nunca marcar como declarado automáticamente.
+    updated_by: autor
   }]);
 
-  if (errCompra) return alert('Error al registrar la compra: ' + errCompra.message);
+  if (errCompra) return alert('Error al registrar la compra: ' + errCompra.message + '\nCompruebe que ya ejecutó la migración SQL de Taxes.');
 
-  await _supabase.from('movimientos').insert([{
+  // Se conserva la secuencia previa de Entrada + actualización de producto.
+  // Si ocurre un fallo parcial NO pedir al usuario repetir la compra: podría duplicarse.
+  const { error: errMovimiento } = await _supabase.from('movimientos').insert([{
     producto_id: prodId,
     tipo: 'ENTRADA',
     cantidad,
     concepto: `Compra Factura: ${factura} (${proveedor})`,
-    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
+    updated_by: autor
   }]);
 
-  await _supabase.from('productos').update({ 
+  const { error: errStock } = await _supabase.from('productos').update({
     stock_actual: nuevoStock,
     costo_unitario: costoUnitario,
-    updated_by: usuarioActual ? usuarioActual.nombre : 'Sistema'
+    updated_by: autor
   }).eq('id', prodId);
 
-  alert('¡Compra registrada con éxito!');
-  document.getElementById('purchase-form').reset();
-  
-  const display = document.getElementById('compra-total-display');
-  if (display) display.innerText = '$0.00';
+  if (errMovimiento || errStock) {
+    alert('ATENCIÓN: La compra fue registrada, pero falló un paso posterior de inventario. No vuelva a guardarla; solicite una revisión administrativa. ' +
+      [errMovimiento?.message, errStock?.message].filter(Boolean).join(' | '));
+    cargarDatos();
+    return;
+  }
 
+  alert('¡Compra registrada con éxito! El impuesto quedó pendiente de reporte contable.');
+  document.getElementById('purchase-form').reset();
+  inicializarControlesTaxes();
   cargarDatos();
+}
+
+// Evita incorporar texto de proveedores o facturas como HTML ejecutable en la tabla.
+function escaparHTMLCompra(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+function compraFechaTexto(c) {
+  const fecha = c.fecha_compra || (c.fecha ? c.fecha.slice(0, 10) : '');
+  if (!fecha) return 'Sin fecha';
+  const [anio, mes, dia] = fecha.split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
+function comprasFiltradasPorCiclo() {
+  const ciclo = document.getElementById('tax-ciclo-filtro')?.value || '';
+  return ciclo ? comprasContabilidad.filter(c => c.tax_ciclo === ciclo) : comprasContabilidad;
 }
 
 async function cargarHistorialCompras() {
   const tbody = document.getElementById('purchases-table-body');
   if (!tbody) return;
-
-  const { data: compras, error } = await _supabase
-    .from('compras')
-    .select('*, productos(nombre)')
-    .order('fecha', { ascending: false });
-
-  if (error || !compras || compras.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No hay compras registradas.</td></tr>';
+  const pagina = 500;
+  const acumuladas = [];
+  let errorCarga = null;
+  // Paginación explícita: Supabase limita el número de filas por respuesta.
+  for (let desde = 0; ; desde += pagina) {
+    const { data, error } = await _supabase.from('compras')
+      .select('*, productos(nombre)')
+      .order('fecha', { ascending: false })
+      .range(desde, desde + pagina - 1);
+    if (error) { errorCarga = error; break; }
+    acumuladas.push(...(data || []));
+    if (!data || data.length < pagina) break;
+  }
+  if (errorCarga) {
+    console.error('Error cargando compras:', errorCarga);
+    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;">Error al cargar compras. Verifique la migración de Taxes y permisos en Supabase.</td></tr>';
     return;
   }
+  comprasContabilidad = acumuladas;
+  renderizarControlTaxes();
+}
 
-  tbody.innerHTML = compras.map(c => `
-    <tr>
-      <td>${new Date(c.fecha).toLocaleDateString()}</td>
-      <td><b>${c.factura}</b></td>
-      <td>${c.productos?.nombre || 'General'}</td>
-      <td>${c.proveedor}</td>
-      <td>${c.cantidad}</td>
-      <td>$${Number(c.costo_unitario).toFixed(2)}</td>
-      <td><b>$${Number(c.total).toFixed(2)}</b></td>
-      <td><span class="badge ${c.estado_pago === 'Pagada' ? 'badge-in' : 'badge-out'}">${c.estado_pago}</span></td>
-      <td><span style="font-size:0.8rem; color:var(--text-muted);">${c.updated_by || 'Sistema'}</span></td>
-    </tr>
-  `).join('');
+function renderizarControlTaxes() {
+  const tbody = document.getElementById('purchases-table-body');
+  if (!tbody) return;
+  const filtro = document.getElementById('tax-ciclo-filtro')?.value || '';
+  const etiqueta = document.getElementById('tax-ciclo-etiqueta');
+  if (etiqueta) etiqueta.innerText = filtro ? `Ciclo contable seleccionado: ${filtro}` : 'Mostrando todos los ciclos contables';
+  const compras = comprasFiltradasPorCiclo();
+  const sumas = compras.reduce((a, c) => {
+    const subtotal = centsTax(c.total);
+    const impuesto = centsTax(c.tax_monto);
+    const totalConTax = c.total_con_tax == null ? subtotal + impuesto : centsTax(c.total_con_tax);
+    a.subtotal += subtotal;
+    a.impuestos += impuesto;
+    a.total += totalConTax;
+    if (c.tax_estado === 'REPORTADO') a.reportados += impuesto;
+    else a.pendientes += impuesto;
+    return a;
+  }, { subtotal: 0, impuestos: 0, total: 0, reportados: 0, pendientes: 0 });
+  for (const [id, importe] of Object.entries({
+    'tax-kpi-subtotal': sumas.subtotal,
+    'tax-kpi-registrados': sumas.impuestos,
+    'tax-kpi-reportados': sumas.reportados,
+    'tax-kpi-pendientes': sumas.pendientes,
+    'tax-kpi-total': sumas.total
+  })) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = dineroTax(importe);
+  }
+  if (!compras.length) {
+    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:1.5rem;">No hay compras registradas para este ciclo.</td></tr>';
+    return;
+  }
+  const puedeReportar = usuarioActual && ['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol);
+  tbody.innerHTML = compras.map(c => {
+    const importeTax = centsTax(c.tax_monto);
+    const totalConTax = c.total_con_tax == null ? centsTax(c.total) + importeTax : centsTax(c.total_con_tax);
+    const reportado = c.tax_estado === 'REPORTADO';
+    const boton = puedeReportar
+      ? `<div class="tax-row-actions">
+           <button type="button" class="tax-action-btn" onclick="abrirEdicionTax('${escaparHTMLCompra(c.id)}')">Editar Taxes</button>
+           ${importeTax > 0 ? `<button type="button" class="tax-action-btn" onclick="cambiarEstadoTax('${escaparHTMLCompra(c.id)}', '${reportado ? 'PENDIENTE' : 'REPORTADO'}')">${reportado ? 'Revertir a pendiente' : 'Marcar reportado'}</button>` : ''}
+         </div>`
+      : '<span class="tax-no-action">—</span>';
+    return `
+      <tr>
+        <td>${compraFechaTexto(c)}</td>
+        <td><b>${escaparHTMLCompra(c.factura)}</b></td>
+        <td>${escaparHTMLCompra(c.productos?.nombre || 'General')}</td>
+        <td>${escaparHTMLCompra(c.proveedor)}</td>
+        <td>${escaparHTMLCompra(c.cantidad)}</td>
+        <td>${dineroTax(centsTax(c.costo_unitario))}</td>
+        <td>${dineroTax(centsTax(c.total))}</td>
+        <td>${escaparHTMLCompra(c.tax_tipo === 'MONTO' ? 'Monto fijo' : `${Number(c.tax_porcentaje || 0)}%`)}</td>
+        <td><strong>${dineroTax(importeTax)}</strong></td>
+        <td><b>${dineroTax(totalConTax)}</b></td>
+        <td>${escaparHTMLCompra(c.tax_ciclo || 'Sin ciclo')}</td>
+        <td><span class="tax-status ${reportado ? 'reported' : 'pending'}">${importeTax === 0 ? 'Sin Tax' : reportado ? 'Reportado' : 'Pendiente'}</span></td>
+        <td><span class="badge ${c.estado_pago === 'Pagada' ? 'badge-in' : 'badge-out'}">${escaparHTMLCompra(c.estado_pago)}</span></td>
+        <td>${escaparHTMLCompra(c.updated_by || 'Sistema')}</td>
+        <td>${boton}</td>
+      </tr>`;
+  }).join('');
+}
+
+function mostrarTodosLosCiclosTax() {
+  const filtro = document.getElementById('tax-ciclo-filtro');
+  if (filtro) filtro.value = '';
+  renderizarControlTaxes();
+}
+
+// Edición contable independiente: útil para actualizar impuestos de compras históricas.
+function abrirEdicionTax(compraId) {
+  if (!usuarioActual || !['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol)) {
+    return alert('Solo Administración puede editar los impuestos de una compra.');
+  }
+  const compra = comprasContabilidad.find(c => c.id === compraId);
+  if (!compra) return alert('No se encontró la compra seleccionada.');
+  compraEditandoTaxId = compraId;
+  document.getElementById('tax-edit-factura-label').innerText = `Factura: ${compra.factura || 'Sin número'} • ${compra.proveedor || 'Sin proveedor'}`;
+  document.getElementById('tax-edit-fecha').value = compra.fecha_compra || (compra.fecha || '').slice(0, 10);
+  document.getElementById('tax-edit-ciclo').value = compra.tax_ciclo || (compra.fecha_compra || '').slice(0, 7);
+  document.getElementById('tax-edit-modo').value = compra.tax_tipo || 'PORCENTAJE';
+  document.getElementById('tax-edit-porcentaje').value = Number(compra.tax_porcentaje || 0);
+  document.getElementById('tax-edit-monto').value = Number(compra.tax_monto || 0).toFixed(2);
+  actualizarModoEdicionTax();
+  document.getElementById('modal-editar-tax').classList.add('open');
+  lucide.createIcons();
+}
+
+function cerrarEdicionTax() {
+  document.getElementById('modal-editar-tax').classList.remove('open');
+  compraEditandoTaxId = null;
+}
+
+function actualizarModoEdicionTax() {
+  const modo = document.getElementById('tax-edit-modo').value;
+  document.getElementById('tax-edit-porcentaje').disabled = modo !== 'PORCENTAJE';
+  document.getElementById('tax-edit-monto').disabled = modo !== 'MONTO';
+  calcularEdicionTax();
+}
+
+function calcularEdicionTax() {
+  const compra = comprasContabilidad.find(c => c.id === compraEditandoTaxId);
+  if (!compra) return;
+  const desglose = calcularDesgloseCompra(
+    Number(compra.cantidad), Number(compra.costo_unitario),
+    document.getElementById('tax-edit-modo').value,
+    Number(document.getElementById('tax-edit-porcentaje').value) || 0,
+    Number(document.getElementById('tax-edit-monto').value) || 0
+  );
+  document.getElementById('tax-edit-total-display').innerText = dineroTax(desglose.total);
+}
+
+async function guardarEdicionTax(e) {
+  e.preventDefault();
+  if (!usuarioActual || !['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol)) {
+    return alert('Solo Administración puede editar Taxes.');
+  }
+  const compra = comprasContabilidad.find(c => c.id === compraEditandoTaxId);
+  if (!compra) return alert('Compra no encontrada.');
+  const fecha = document.getElementById('tax-edit-fecha').value;
+  const ciclo = document.getElementById('tax-edit-ciclo').value;
+  const modo = document.getElementById('tax-edit-modo').value;
+  const porcentaje = Number(document.getElementById('tax-edit-porcentaje').value) || 0;
+  const monto = Number(document.getElementById('tax-edit-monto').value) || 0;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !/^\d{4}-(0[1-9]|1[0-2])$/.test(ciclo) ||
+      !['PORCENTAJE', 'MONTO'].includes(modo) ||
+      (modo === 'PORCENTAJE' && (porcentaje < 0 || porcentaje > 100)) ||
+      (modo === 'MONTO' && monto < 0)) {
+    return alert('Revise la fecha, el ciclo contable y el impuesto indicado.');
+  }
+  const desglose = calcularDesgloseCompra(Number(compra.cantidad), Number(compra.costo_unitario), modo, porcentaje, monto);
+  const importeTax = desglose.impuestos / 100;
+  const taxActual = centsTax(compra.tax_monto);
+  const cambioDatos = taxActual !== desglose.impuestos ||
+    (compra.tax_ciclo || '') !== ciclo ||
+    (compra.fecha_compra || '') !== fecha ||
+    (compra.tax_tipo || 'PORCENTAJE') !== modo ||
+    Number(compra.tax_porcentaje || 0) !== (modo === 'PORCENTAJE' ? porcentaje : 0);
+  if (!cambioDatos) { cerrarEdicionTax(); return; }
+  if (compra.tax_estado === 'REPORTADO' &&
+      !confirm('Esta factura ya estaba marcada como REPORTADA. Editar los datos la regresará a PENDIENTE para nueva validación. ¿Continuar?')) return;
+
+  const cambios = {
+    fecha_compra: fecha,
+    tax_ciclo: ciclo,
+    tax_tipo: modo,
+    tax_porcentaje: modo === 'PORCENTAJE' ? porcentaje : 0,
+    tax_monto: importeTax,
+    total_con_tax: desglose.total / 100,
+    tax_estado: 'PENDIENTE',
+    tax_reportado_fecha: null,
+    tax_reportado_por: null,
+    tax_actualizado_fecha: new Date().toISOString(),
+    tax_actualizado_por: usuarioActual.nombre
+  };
+  const { data, error } = await _supabase.from('compras').update(cambios).eq('id', compra.id).select('id');
+  if (error || !data?.length) {
+    return alert('No se pudieron actualizar los impuestos: ' + (error?.message || 'Verifique permisos de Supabase.'));
+  }
+  cerrarEdicionTax();
+  await cargarHistorialCompras();
+}
+
+async function cambiarEstadoTax(compraId, nuevoEstado) {
+  if (!usuarioActual || !['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol)) {
+    return alert('Solo los administradores pueden cambiar el estado de reporte contable.');
+  }
+  if (!['PENDIENTE', 'REPORTADO'].includes(nuevoEstado)) return;
+  const compra = comprasContabilidad.find(c => c.id === compraId);
+  if (!compra || centsTax(compra.tax_monto) <= 0) return alert('Esta compra no tiene impuestos registrados.');
+  if (!confirm(`¿Desea marcar los impuestos de la factura ${compra.factura} como ${nuevoEstado.toLowerCase()}?`)) return;
+  const nuevoValor = {
+    tax_estado: nuevoEstado,
+    tax_reportado_fecha: nuevoEstado === 'REPORTADO' ? new Date().toISOString() : null,
+    tax_reportado_por: nuevoEstado === 'REPORTADO' ? usuarioActual.nombre : null
+  };
+  const { data, error } = await _supabase.from('compras').update(nuevoValor).eq('id', compraId).select('id');
+  if (error || !data?.length) return alert('No se pudo actualizar el estado contable. Revise los permisos de Supabase. ' + (error?.message || ''));
+  await cargarHistorialCompras();
+}
+
+function celdaCSVTax(valor) {
+  let texto = String(valor ?? '');
+  // Neutraliza fórmulas al abrir CSV en Excel u otra hoja de cálculo.
+  if (/^[\s]*[=+@-]/.test(texto)) texto = "'" + texto;
+  return '"' + texto.replace(/"/g, '""') + '"';
+}
+
+function exportarTaxesCSV() {
+  const compras = comprasFiltradasPorCiclo();
+  if (!compras.length) return alert('No hay compras para exportar en este ciclo.');
+  const filas = [[
+    'Fecha compra', 'Ciclo contable', 'Factura', 'Producto', 'Proveedor',
+    'Cantidad', 'Costo unitario USD', 'Subtotal USD', 'Sales Tax porcentaje',
+    'Tipo Tax', 'Taxes USD', 'Total con Taxes USD', 'Estado Tax',
+    'Reportado fecha', 'Reportado por', 'Ultima edicion Taxes', 'Taxes editado por', 'Estado pago', 'Registrado por'
+  ]];
+  compras.forEach(c => filas.push([
+    c.fecha_compra || (c.fecha || '').slice(0, 10), c.tax_ciclo || '', c.factura,
+    c.productos?.nombre || '', c.proveedor, c.cantidad, c.costo_unitario,
+    c.total, c.tax_porcentaje || 0, c.tax_tipo || 'PORCENTAJE',
+    c.tax_monto || 0, c.total_con_tax ?? Number(c.total || 0) + Number(c.tax_monto || 0),
+    c.tax_estado || 'PENDIENTE', c.tax_reportado_fecha || '',
+    c.tax_reportado_por || '', c.tax_actualizado_fecha || '', c.tax_actualizado_por || '', c.estado_pago, c.updated_by || ''
+  ]));
+  const contenido = '\uFEFF' + filas.map(fila => fila.map(celdaCSVTax).join(',')).join('\r\n');
+  const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement('a');
+  const ciclo = document.getElementById('tax-ciclo-filtro')?.value || 'todos-los-ciclos';
+  enlace.href = url;
+  enlace.download = `easy-solutions-taxes-${ciclo}.csv`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ==========================================
