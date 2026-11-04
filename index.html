@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Easy Solutions - Inventory Management</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=tax-control-1.3">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -249,6 +249,7 @@
               <th>Producto</th>
               <th>Categoría</th>
               <th>Stock</th>
+              <th>UM</th>
               <th>Costo U. ($ USD)</th>
               <th>Modificado por</th>
               <th>Acciones</th>
@@ -473,27 +474,74 @@
           </form>
         </div>
 
-        <!-- CONTROL CONTABLE DE TAXES POR CICLO -->
+        <!-- CONTROL CONTABLE DE TAXES POR CICLO: MEJORA VISUAL ÚNICAMENTE -->
         <div class="data-section tax-report-section" style="margin-top: 1.5rem;">
           <h3>Control Contable de Taxes por Ciclo</h3>
           <div class="data-section-body">
-            <div class="tax-report-toolbar">
-              <div>
-                <label for="tax-ciclo-filtro">Ciclo mensual a consultar</label>
-                <input type="month" id="tax-ciclo-filtro" onchange="renderizarControlTaxes()">
+            <div class="tax-accounting-top">
+              <div class="tax-accounting-heading">
+                <span class="tax-accounting-overline">RESUMEN CONTABLE</span>
+                <p>Consulta los impuestos por periodo y exporta la información para contabilidad.</p>
               </div>
-              <button type="button" class="btn-secondary" onclick="mostrarTodosLosCiclosTax()"><i data-lucide="calendar-days"></i> Todos los ciclos</button>
-              <button type="button" class="btn-secondary" onclick="exportarTaxesCSV()"><i data-lucide="download"></i> Exportar CSV</button>
+
+              <div class="tax-accounting-toolbar">
+                <div class="tax-accounting-filter">
+                  <label for="tax-ciclo-filtro">Ciclo mensual a consultar</label>
+                  <input type="month" id="tax-ciclo-filtro" onchange="renderizarControlTaxes()">
+                </div>
+                <div class="tax-accounting-actions">
+                  <button type="button" class="btn-secondary" onclick="mostrarTodosLosCiclosTax()">
+                    <i data-lucide="calendar-days"></i> Todos los ciclos
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="exportarTaxesCSV()">
+                    <i data-lucide="download"></i> Exportar CSV
+                  </button>
+                </div>
+              </div>
             </div>
-            <p class="tax-cycle-caption" id="tax-ciclo-etiqueta">Ciclo contable: mes actual</p>
+
+            <div class="tax-accounting-period">
+              <span class="tax-accounting-status-dot" aria-hidden="true"></span>
+              <p class="tax-cycle-caption" id="tax-ciclo-etiqueta">Mostrando todos los ciclos contables</p>
+            </div>
+
             <div class="tax-summary-grid">
-              <div class="tax-summary-kpi"><span>Compras sin Taxes</span><strong id="tax-kpi-subtotal">$0.00</strong></div>
-              <div class="tax-summary-kpi"><span>Taxes registrados</span><strong id="tax-kpi-registrados">$0.00</strong></div>
-              <div class="tax-summary-kpi"><span>Taxes reportados</span><strong id="tax-kpi-reportados">$0.00</strong></div>
-              <div class="tax-summary-kpi"><span>Taxes pendientes</span><strong id="tax-kpi-pendientes">$0.00</strong></div>
-              <div class="tax-summary-kpi"><span>Total compras con Taxes</span><strong id="tax-kpi-total">$0.00</strong></div>
+              <div class="tax-summary-kpi tax-accounting-card--subtotal">
+                <span class="tax-accounting-card-icon"><i data-lucide="shopping-cart"></i></span>
+                <span class="tax-accounting-card-label">Compras sin Taxes</span>
+                <strong id="tax-kpi-subtotal">$0.00</strong>
+                <span class="tax-accounting-card-hint">Subtotal registrado</span>
+              </div>
+              <div class="tax-summary-kpi tax-accounting-card--registered">
+                <span class="tax-accounting-card-icon"><i data-lucide="receipt-text"></i></span>
+                <span class="tax-accounting-card-label">Taxes registrados</span>
+                <strong id="tax-kpi-registrados">$0.00</strong>
+                <span class="tax-accounting-card-hint">Impuestos del periodo</span>
+              </div>
+              <div class="tax-summary-kpi tax-accounting-card--reported">
+                <span class="tax-accounting-card-icon"><i data-lucide="check-circle-2"></i></span>
+                <span class="tax-accounting-card-label">Taxes reportados</span>
+                <strong id="tax-kpi-reportados">$0.00</strong>
+                <span class="tax-accounting-card-hint">Marcados como reportados</span>
+              </div>
+              <div class="tax-summary-kpi tax-accounting-card--pending">
+                <span class="tax-accounting-card-icon"><i data-lucide="clock-3"></i></span>
+                <span class="tax-accounting-card-label">Taxes pendientes</span>
+                <strong id="tax-kpi-pendientes">$0.00</strong>
+                <span class="tax-accounting-card-hint">Por revisar o reportar</span>
+              </div>
+              <div class="tax-summary-kpi tax-accounting-card--total">
+                <span class="tax-accounting-card-icon"><i data-lucide="wallet"></i></span>
+                <span class="tax-accounting-card-label">Total compras con Taxes</span>
+                <strong id="tax-kpi-total">$0.00</strong>
+                <span class="tax-accounting-card-hint">Subtotal + impuestos</span>
+              </div>
             </div>
-            <p class="tax-note">“Reportado” es una marca interna de control contable, no una constancia de declaración o pago ante autoridades fiscales. Solo Administración puede cambiarla.</p>
+
+            <div class="tax-accounting-legal-note">
+              <i data-lucide="info" aria-hidden="true"></i>
+              <p><strong>Nota contable:</strong> “Reportado” es una marca interna de control, no una constancia de declaración o pago ante autoridades fiscales. Solo Administración puede cambiarla.</p>
+            </div>
           </div>
         </div>
 
