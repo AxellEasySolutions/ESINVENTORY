@@ -426,34 +426,103 @@
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-              <div>
-                <span style="font-size:0.85rem; color:var(--text-muted); font-weight:600;">Total Estimado de Compra: </span>
-                <strong id="compra-total-display" style="font-size:1.2rem; color:var(--primary-blue);">$0.00</strong>
+            <!-- IMPUESTOS POR FACTURA - independientes del costo de inventario -->
+            <div class="tax-purchase-panel">
+              <div class="tax-panel-header">
+                <div>
+                  <h4><i data-lucide="receipt-text"></i> Taxes / Impuestos de la compra</h4>
+                  <p>Indique la tasa o el monto exacto de impuestos de la factura. Si la compra no tiene impuestos, deje 0.</p>
+                </div>
+              </div>
+              <div class="tax-fields-grid">
+                <div>
+                  <label for="compra-fecha">Fecha de la compra</label>
+                  <input type="date" id="compra-fecha" required onchange="sincronizarCicloTax()">
+                </div>
+                <div>
+                  <label for="compra-ciclo-tax">Ciclo de reporte (mes)</label>
+                  <input type="month" id="compra-ciclo-tax" required>
+                </div>
+                <div>
+                  <label for="compra-tax-modo">Forma de calcular Tax</label>
+                  <select id="compra-tax-modo" onchange="actualizarModoTax()">
+                    <option value="PORCENTAJE">Porcentaje (%)</option>
+                    <option value="MONTO">Monto de factura ($)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="compra-tax-porcentaje">Sales Tax (%)</label>
+                  <input type="number" id="compra-tax-porcentaje" min="0" max="100" step="0.0001" value="0" oninput="calcularTotalCompra()">
+                </div>
+                <div>
+                  <label for="compra-tax-monto">Tax Amount ($ USD)</label>
+                  <input type="number" id="compra-tax-monto" min="0" step="0.01" value="0.00" oninput="calcularTotalCompra()" disabled>
+                </div>
+              </div>
+              <p class="tax-note">Los impuestos se controlan por separado y no aumentan el costo unitario ni las existencias del producto.</p>
+            </div>
+
+            <div class="tax-purchase-footer">
+              <div class="tax-amounts">
+                <div><span>Subtotal antes de Taxes</span><strong id="compra-subtotal-display">$0.00</strong></div>
+                <div><span>Taxes / Impuestos</span><strong id="compra-tax-display">$0.00</strong></div>
+                <div class="tax-amounts-total"><span>Total con Taxes</span><strong id="compra-total-display">$0.00</strong></div>
               </div>
               <button type="submit" class="btn-primary" style="padding:0.6rem 1.5rem;"><i data-lucide="save"></i> Guardar Compra e Incrementar Inventario</button>
             </div>
           </form>
         </div>
 
-        <div class="data-section" style="margin-top: 1.5rem;">
+        <!-- CONTROL CONTABLE DE TAXES POR CICLO -->
+        <div class="data-section tax-report-section" style="margin-top: 1.5rem;">
+          <h3>Control Contable de Taxes por Ciclo</h3>
+          <div class="data-section-body">
+            <div class="tax-report-toolbar">
+              <div>
+                <label for="tax-ciclo-filtro">Ciclo mensual a consultar</label>
+                <input type="month" id="tax-ciclo-filtro" onchange="renderizarControlTaxes()">
+              </div>
+              <button type="button" class="btn-secondary" onclick="mostrarTodosLosCiclosTax()"><i data-lucide="calendar-days"></i> Todos los ciclos</button>
+              <button type="button" class="btn-secondary" onclick="exportarTaxesCSV()"><i data-lucide="download"></i> Exportar CSV</button>
+            </div>
+            <p class="tax-cycle-caption" id="tax-ciclo-etiqueta">Ciclo contable: mes actual</p>
+            <div class="tax-summary-grid">
+              <div class="tax-summary-kpi"><span>Compras sin Taxes</span><strong id="tax-kpi-subtotal">$0.00</strong></div>
+              <div class="tax-summary-kpi"><span>Taxes registrados</span><strong id="tax-kpi-registrados">$0.00</strong></div>
+              <div class="tax-summary-kpi"><span>Taxes reportados</span><strong id="tax-kpi-reportados">$0.00</strong></div>
+              <div class="tax-summary-kpi"><span>Taxes pendientes</span><strong id="tax-kpi-pendientes">$0.00</strong></div>
+              <div class="tax-summary-kpi"><span>Total compras con Taxes</span><strong id="tax-kpi-total">$0.00</strong></div>
+            </div>
+            <p class="tax-note">“Reportado” es una marca interna de control contable, no una constancia de declaración o pago ante autoridades fiscales. Solo Administración puede cambiarla.</p>
+          </div>
+        </div>
+
+        <div class="data-section tax-history-section" style="margin-top: 1.5rem;">
           <h3>Historial de Entradas / Compras Registradas</h3>
+          <div class="tax-table-scroll">
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Fecha</th>
+                <th>Fecha compra</th>
                 <th>Factura</th>
                 <th>Producto</th>
                 <th>Proveedor</th>
                 <th>Cantidad</th>
                 <th>Costo U. ($)</th>
-                <th>Total ($ USD)</th>
+                <th>Subtotal ($)</th>
+                <th>Sales Tax</th>
+                <th>Taxes ($)</th>
+                <th>Total con Taxes ($)</th>
+                <th>Ciclo contable</th>
+                <th>Estado Tax</th>
                 <th>Estado Pago</th>
                 <th>Registrado por</th>
+                <th>Acción contable</th>
               </tr>
             </thead>
             <tbody id="purchases-table-body"></tbody>
           </table>
+          </div>
         </div>
       </section>
 
@@ -979,6 +1048,34 @@
         <div class="modal-actions">
           <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AJUSTAR TAXES DE UNA COMPRA, SIN CAMBIAR STOCK -->
+  <div id="modal-editar-tax" class="modal">
+    <div class="modal-content tax-edit-modal">
+      <h3><i data-lucide="receipt-text"></i> Editar Taxes de Factura</h3>
+      <p class="tax-note" id="tax-edit-factura-label">Seleccione una compra para editar sus impuestos.</p>
+      <form id="tax-edit-form" onsubmit="guardarEdicionTax(event)">
+        <div class="tax-edit-fields">
+          <div><label for="tax-edit-fecha">Fecha de compra</label><input type="date" id="tax-edit-fecha" required></div>
+          <div><label for="tax-edit-ciclo">Ciclo contable</label><input type="month" id="tax-edit-ciclo" required></div>
+          <div><label for="tax-edit-modo">Tipo de Tax</label>
+            <select id="tax-edit-modo" onchange="actualizarModoEdicionTax()">
+              <option value="PORCENTAJE">Porcentaje (%)</option>
+              <option value="MONTO">Monto exacto ($)</option>
+            </select>
+          </div>
+          <div><label for="tax-edit-porcentaje">Sales Tax (%)</label><input type="number" min="0" max="100" step="0.0001" id="tax-edit-porcentaje" oninput="calcularEdicionTax()"></div>
+          <div><label for="tax-edit-monto">Tax Amount ($)</label><input type="number" min="0" step="0.01" id="tax-edit-monto" oninput="calcularEdicionTax()"></div>
+        </div>
+        <div class="tax-edit-total">Nuevo total de factura: <strong id="tax-edit-total-display">$0.00</strong></div>
+        <p class="tax-note">Si modifica los impuestos de una factura ya reportada, su estado volverá a Pendiente para revisión.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="cerrarEdicionTax()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Taxes</button>
         </div>
       </form>
     </div>
