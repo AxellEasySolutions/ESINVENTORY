@@ -553,7 +553,7 @@ function renderizarTablaInventario(productos) {
   const tbody = document.getElementById('inventory-table-body');
   if (!tbody) return;
   if (!productos || productos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay productos registrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay productos registrados.</td></tr>';
     return;
   }
   tbody.innerHTML = productos.map(p => `
@@ -562,6 +562,7 @@ function renderizarTablaInventario(productos) {
       <td>${p.nombre || ''}</td>
       <td>${p.categoria || ''}</td>
       <td style="color:${p.stock_actual <= p.stock_minimo ? 'red' : 'inherit'}; font-weight:bold;">${p.stock_actual ?? 0}</td>
+      <td>${p.unidad_medida || '—'}</td>
       <td>$${Number(p.costo_unitario || 0).toFixed(2)}</td>
       <td><span style="font-size:0.8rem; color:var(--text-muted);">${p.updated_by || 'Sistema'}</span></td>
       <td>
