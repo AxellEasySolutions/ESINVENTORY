@@ -843,3 +843,309 @@ body {
 .tax-edit-total { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--sidebar-border); padding-top: .8rem; font-size: .85rem; }
 .tax-edit-total strong { font-size: 1.15rem; color: var(--primary-blue); }
 @media (max-width: 550px) { .tax-edit-fields { grid-template-columns: 1fr; } }
+
+
+/* ======================================================================
+   V1.3 · SOLO PRESENTACIÓN DEL CONTROL CONTABLE DE TAXES POR CICLO
+   Clases limitadas al bloque .tax-report-section.
+   No modifica el diseño original de Easy Solutions ni el resto de compras.
+   ====================================================================== */
+.tax-report-section .data-section-body {
+  padding: 1.25rem;
+}
+
+.tax-report-section .tax-accounting-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.tax-report-section .tax-accounting-heading {
+  flex: 1 1 250px;
+  min-width: 0;
+}
+
+.tax-report-section .tax-accounting-overline {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--primary-blue);
+  font-size: .69rem;
+  font-weight: 800;
+  letter-spacing: .075em;
+}
+
+.tax-report-section .tax-accounting-heading p {
+  color: var(--text-muted);
+  font-size: .82rem;
+  line-height: 1.5;
+  max-width: 390px;
+}
+
+.tax-report-section .tax-accounting-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: .7rem;
+  flex-wrap: wrap;
+}
+
+.tax-report-section .tax-accounting-filter {
+  min-width: 188px;
+}
+
+.tax-report-section .tax-accounting-filter label {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--text-muted);
+  font-size: .75rem;
+  font-weight: 650;
+}
+
+.tax-report-section .tax-accounting-filter input {
+  display: block;
+  width: 100%;
+  height: 38px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+  border-radius: 6px;
+  padding: .4rem .65rem;
+  font: inherit;
+  font-size: .82rem;
+}
+
+.tax-report-section .tax-accounting-filter input:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, .4);
+  outline-offset: 1px;
+}
+
+.tax-report-section .tax-accounting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+.tax-report-section .tax-accounting-actions .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  gap: .45rem;
+  white-space: nowrap;
+}
+
+.tax-report-section .tax-accounting-actions .btn-secondary svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tax-report-section .tax-accounting-period {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: .95rem 0 .8rem;
+  width: max-content;
+  max-width: 100%;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: .32rem .7rem;
+}
+
+.tax-report-section .tax-accounting-status-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary-blue);
+}
+
+.tax-report-section .tax-cycle-caption {
+  margin: 0;
+  color: #475569;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tax-report-section .tax-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .85rem;
+}
+
+.tax-report-section .tax-summary-kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  min-height: 145px;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid var(--sidebar-border);
+  border-top: 3px solid #94a3b8;
+  border-radius: 9px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .045);
+}
+
+.tax-report-section .tax-accounting-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  margin-bottom: .65rem;
+}
+
+.tax-report-section .tax-accounting-card-icon svg {
+  height: 16px;
+  width: 16px;
+}
+
+.tax-report-section .tax-accounting-card-label {
+  display: block;
+  font-size: .69rem;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: .018em;
+  font-weight: 750;
+  color: var(--text-muted);
+}
+
+.tax-report-section .tax-summary-kpi strong {
+  display: block;
+  margin: .35rem 0 .3rem;
+  color: var(--text-dark);
+  font-size: clamp(1.12rem, 1.6vw, 1.45rem);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.tax-report-section .tax-accounting-card-hint {
+  font-size: .69rem;
+  line-height: 1.4;
+  color: #94a3b8;
+  margin-top: auto;
+}
+
+.tax-report-section .tax-accounting-card--registered {
+  border-top-color: #2563eb;
+}
+.tax-report-section .tax-accounting-card--registered .tax-accounting-card-icon {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.tax-report-section .tax-accounting-card--reported {
+  border-top-color: #16a34a;
+}
+.tax-report-section .tax-accounting-card--reported .tax-accounting-card-icon {
+  color: #15803d;
+  background: #dcfce7;
+}
+.tax-report-section .tax-accounting-card--reported strong {
+  color: #15803d;
+}
+.tax-report-section .tax-accounting-card--pending {
+  border-top-color: #f59e0b;
+}
+.tax-report-section .tax-accounting-card--pending .tax-accounting-card-icon {
+  color: #b45309;
+  background: #fef3c7;
+}
+.tax-report-section .tax-accounting-card--pending strong {
+  color: #b45309;
+}
+.tax-report-section .tax-accounting-card--total {
+  border-top-color: #7c3aed;
+  background: #faf9ff;
+  border-color: #e9d5ff;
+  border-top-color: #7c3aed;
+}
+.tax-report-section .tax-accounting-card--total .tax-accounting-card-icon {
+  color: #7c3aed;
+  background: #ede9fe;
+}
+.tax-report-section .tax-accounting-card--total strong {
+  color: #5b21b6;
+}
+
+.tax-report-section .tax-accounting-legal-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  padding: .75rem .95rem;
+  margin-top: 1.05rem;
+  background: #f8fafc;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 8px;
+}
+
+.tax-report-section .tax-accounting-legal-note svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin-top: 1px;
+  color: var(--primary-blue);
+}
+
+.tax-report-section .tax-accounting-legal-note p {
+  font-size: .74rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.tax-report-section .tax-accounting-legal-note strong {
+  color: var(--text-dark);
+}
+
+@media (max-width: 1380px) {
+  .tax-report-section .tax-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .tax-report-section .tax-accounting-top {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .tax-report-section .tax-accounting-toolbar {
+    align-items: stretch;
+  }
+  .tax-report-section .tax-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .tax-report-section .tax-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .tax-report-section .tax-accounting-actions .btn-secondary {
+    flex: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .tax-report-section .tax-accounting-filter {
+    width: 100%;
+  }
+  .tax-report-section .tax-accounting-actions {
+    width: 100%;
+  }
+  .tax-report-section .tax-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .tax-report-section .tax-summary-kpi {
+    min-height: 115px;
+  }
+}
