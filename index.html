@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,28 +15,28 @@
     <div class="login-card">
       <div style="text-align: center; margin-bottom: 1.5rem;">
         <img src="ES Homes (Horizontal).png" alt="Logo Empresa" style="max-width: 160px; margin-bottom: 0.5rem;" onerror="this.style.display='none';">
-        <h2 style="font-size: 1.2rem; color: var(--text-dark);">Iniciar Sesión</h2>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Sistema de Control de Inventario</p>
+        <h2 style="font-size: 1.2rem; color: var(--text-dark);">Sign In</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Inventory Control System</p>
       </div>
 
       <form id="login-form" style="display: flex; flex-direction: column; gap: 1rem;">
         <div>
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Correo Electrónico</label>
-          <input type="email" id="login-email" placeholder="usuario@eshomes.com" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px;" required>
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Email Address</label>
+          <input type="email" id="login-email" placeholder="user@eshomes.com" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px;" required>
         </div>
         <div>
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Contraseña</label>
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Password</label>
           <input type="password" id="login-password" placeholder="••••••••" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px;" required>
         </div>
         <button type="submit" class="btn-primary" style="justify-content: center; padding: 0.7rem; margin-top: 0.5rem;">
-          <i data-lucide="log-in"></i> Ingresar al Sistema
+          <i data-lucide="log-in"></i> Sign In
         </button>
       </form>
     </div>
   </div>
 
   <header class="topbar">
-    <h1>Easy Solutions - Sistema de Inventario</h1>
+    <h1>Easy Solutions - Inventory Management System</h1>
     <div style="display: flex; align-items: center; gap: 1rem;">
       <div id="online-users-container" style="display: flex; align-items: center; gap: -0.3rem;"></div>
       
@@ -48,20 +48,20 @@
 
         <div id="user-dropdown-menu" style="display: none; position: absolute; right: 0; top: 120%; background: #ffffff; color: var(--text-dark); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid var(--border-color); min-width: 190px; z-index: 1000; overflow: hidden;">
           <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); background: #f8fafc;">
-            <div id="dropdown-user-name" style="font-weight: 700; font-size: 0.85rem; color: var(--text-dark);">Usuario</div>
-            <div id="dropdown-user-role" style="font-size: 0.72rem; color: var(--text-muted);">Rol</div>
+            <div id="dropdown-user-name" style="font-weight: 700; font-size: 0.85rem; color: var(--text-dark);">User</div>
+            <div id="dropdown-user-role" style="font-size: 0.72rem; color: var(--text-muted);">Role</div>
           </div>
           <button onclick="openChangePasswordModal()" style="width: 100%; text-align: left; padding: 0.65rem 1rem; border: none; background: none; cursor: pointer; font-size: 0.8rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-            <i data-lucide="key-round" style="width: 15px; height: 15px; color: var(--primary-blue);"></i> Cambiar Contraseña
+            <i data-lucide="key-round" style="width: 15px; height: 15px; color: var(--primary-blue);"></i> Change Password
           </button>
           <div style="border-top: 1px solid var(--border-color);"></div>
           <button onclick="cerrarSesion()" style="width: 100%; text-align: left; padding: 0.65rem 1rem; border: none; background: none; cursor: pointer; font-size: 0.8rem; color: #ef4444; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
-            <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Cerrar Sesión
+            <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Sign Out
           </button>
         </div>
       </div>
 
-      <button class="btn-primary" id="btn-nuevo-prod-header" onclick="openModal()"><i data-lucide="plus"></i> Nuevo Producto</button>
+      <button class="btn-primary" id="btn-nuevo-prod-header" onclick="openModal()"><i data-lucide="plus"></i> New Product</button>
     </div>
   </header>
 
@@ -77,22 +77,22 @@
       </div>
       
       <nav class="menu">
-        <button class="nav-btn active" data-role="ALL" onclick="switchTab('dashboard')"><i data-lucide="layout-grid"></i> Inicio / Inventario</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('inventario')"><i data-lucide="package"></i> Materiales / Productos</button>
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('movil')"><i data-lucide="shopping-bag"></i> Cesta de entrega</button>
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('compras')"><i data-lucide="shopping-cart"></i> Entradas / Compras</button>
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('salidas')"><i data-lucide="truck"></i> Salidas / Entregas</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('obras')"><i data-lucide="folder-kanban"></i> Proyectos / Obras</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('contratistas')"><i data-lucide="users"></i> Contratistas</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Proveedores</button>
+        <button class="nav-btn active" data-role="ALL" onclick="switchTab('dashboard')"><i data-lucide="layout-grid"></i> Dashboard / Inventory</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('inventario')"><i data-lucide="package"></i> Materials / Products</button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('movil')"><i data-lucide="shopping-bag"></i> Delivery Cart</button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('compras')"><i data-lucide="shopping-cart"></i> Stock Receipts / Purchases</button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('salidas')"><i data-lucide="truck"></i> Stock Issues / Deliveries</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('obras')"><i data-lucide="folder-kanban"></i> Projects / Job Sites</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('contratistas')"><i data-lucide="users"></i> Contractors</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Suppliers</button>
         <button class="nav-btn" data-role="ALL" onclick="switchTab('vencimientos')"><i data-lucide="truck"></i> Request Tracking</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('movimientos')"><i data-lucide="arrow-left-right"></i> Kardex</button>
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('etiquetas')"><i data-lucide="clipboard-list"></i> Requests / Solicitudes</button>
-        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('reportes')"><i data-lucide="bar-chart-3"></i> Reportes</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('movimientos')"><i data-lucide="arrow-left-right"></i> Stock Ledger</button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('etiquetas')"><i data-lucide="clipboard-list"></i> Material Requests</button>
+        <button class="nav-btn" data-role="ADMIN" onclick="switchTab('reportes')"><i data-lucide="bar-chart-3"></i> Reports</button>
       </nav>
 
       <div class="sidebar-footer">
-        <button class="btn-logout" onclick="cerrarSesion()"><i data-lucide="log-out"></i> Cerrar sesión</button>
+        <button class="btn-logout" onclick="cerrarSesion()"><i data-lucide="log-out"></i> Sign Out</button>
       </div>
     </aside>
 
@@ -101,14 +101,14 @@
       <section id="tab-dashboard" class="tab-content active">
         <div class="control-banner">
           <div>
-            <span class="sub-tag">CONTROL DE INVENTARIO</span>
-            <h2>Inventario Construcción</h2>
-            <p>Existencias, valorización, entradas, salidas y consumo por obra.</p>
+            <span class="sub-tag">INVENTORY CONTROL</span>
+            <h2>Construction Inventory</h2>
+            <p>Stock levels, valuation, receipts, deliveries, and job-site usage.</p>
           </div>
           <div class="live-status">
             <span class="status-dot"></span>
             <div>
-              <strong style="color: #16a34a; font-size: 0.75rem;">ACTUALIZACIÓN EN VIVO</strong>
+              <strong style="color: #16a34a; font-size: 0.75rem;">LIVE UPDATES</strong>
               <div style="font-weight: 700; font-size: 0.85rem;">Easy Solutions</div>
             </div>
           </div>
@@ -116,75 +116,75 @@
 
         <div class="kpi-grid">
           <div class="kpi-card" data-role="ADMIN">
-            <span class="kpi-title">VALOR DEL INVENTARIO</span>
+            <span class="kpi-title">INVENTORY VALUE</span>
             <h3 id="kpi-valor">$0.00</h3>
-            <span class="kpi-sub">A costo registrado</span>
+            <span class="kpi-sub">At recorded cost</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">MATERIALES ACTIVOS</span>
+            <span class="kpi-title">ACTIVE MATERIALS</span>
             <h3 id="kpi-materiales">0</h3>
-            <span class="kpi-sub" id="kpi-cat-count">0 categorías</span>
+            <span class="kpi-sub" id="kpi-cat-count">0 categories</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">STOCK CRÍTICO</span>
+            <span class="kpi-title">LOW STOCK</span>
             <h3 id="kpi-critico">0</h3>
-            <span class="kpi-sub">En o bajo mínimo</span>
+            <span class="kpi-sub">At or below minimum</span>
           </div>
           <div class="kpi-card border-red">
-            <span class="kpi-title">AGOTADOS</span>
+            <span class="kpi-title">OUT OF STOCK</span>
             <h3 id="kpi-agotados" style="color: #ef4444;">0</h3>
-            <span class="kpi-sub">Requieren reposición</span>
+            <span class="kpi-sub">Reorder required</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">OBRAS ACTIVAS</span>
+            <span class="kpi-title">ACTIVE JOB SITES</span>
             <h3 id="kpi-obras-count">0</h3>
-            <span class="kpi-sub">Proyectos en ejecución</span>
+            <span class="kpi-sub">Ongoing projects</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">ENTRADAS DEL MES</span>
+            <span class="kpi-title">MONTHLY RECEIPTS</span>
             <h3 id="kpi-entradas">$0.00</h3>
-            <span class="kpi-sub">Compras registradas</span>
+            <span class="kpi-sub">Recorded purchases</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">SALIDAS DEL MES</span>
+            <span class="kpi-title">MONTHLY ISSUES</span>
             <h3 id="kpi-salidas">$0.00</h3>
-            <span class="kpi-sub">Material entregado</span>
+            <span class="kpi-sub">Materials delivered</span>
           </div>
         </div>
 
         <div class="quick-access-grid">
           <button class="quick-btn" data-role="ADMIN" onclick="switchTab('inventario')">
             <div>
-              <strong>Materiales</strong>
-              <span>Consultar existencias</span>
+              <strong>Materials</strong>
+              <span>View stock levels</span>
             </div>
             <i data-lucide="chevron-right"></i>
           </button>
           <button class="quick-btn" onclick="switchTab('compras')">
             <div>
-              <strong>Registrar entrada</strong>
-              <span>Compra / recepción</span>
+              <strong>Record receipt</strong>
+              <span>Purchase / receiving</span>
             </div>
             <i data-lucide="chevron-right"></i>
           </button>
           <button class="quick-btn" onclick="switchTab('salidas')">
             <div>
-              <strong>Registrar salida</strong>
-              <span>Entrega a obra</span>
+              <strong>Record delivery</strong>
+              <span>Deliver to job site</span>
             </div>
             <i data-lucide="chevron-right"></i>
           </button>
           <button class="quick-btn" data-role="ADMIN" onclick="switchTab('obras')">
             <div>
-              <strong>Obras</strong>
-              <span>Consumo por proyecto</span>
+              <strong>Job Sites</strong>
+              <span>Usage by project</span>
             </div>
             <i data-lucide="chevron-right"></i>
           </button>
           <button class="quick-btn" data-role="ADMIN" onclick="switchTab('reportes')">
             <div>
-              <strong>Reportes</strong>
-              <span>Inventario y Kardex</span>
+              <strong>Reports</strong>
+              <span>Inventory and Stock Ledger</span>
             </div>
             <i data-lucide="chevron-right"></i>
           </button>
@@ -195,10 +195,10 @@
             <div class="dash-card">
               <div class="dash-card-header">
                 <div>
-                  <h3>Existencias por categoría</h3>
-                  <p>Distribución de unidades registradas</p>
+                  <h3>Stock by Category</h3>
+                  <p>Distribution of recorded units</p>
                 </div>
-                <button class="btn-link" data-role="ADMIN" onclick="switchTab('inventario')">Ver materiales</button>
+                <button class="btn-link" data-role="ADMIN" onclick="switchTab('inventario')">View Materials</button>
               </div>
               <div id="dash-categories" class="categories-bars"></div>
             </div>
@@ -206,10 +206,10 @@
             <div class="dash-card">
               <div class="dash-card-header">
                 <div>
-                  <h3>Movimientos recientes</h3>
-                  <p>Salidas y devoluciones hacia obra</p>
+                  <h3>Recent Transactions</h3>
+                  <p>Issues and returns from job sites</p>
                 </div>
-                <button class="btn-link" onclick="switchTab('salidas')">Ver historial</button>
+                <button class="btn-link" onclick="switchTab('salidas')">View History</button>
               </div>
               <div id="dash-movements" class="movements-list"></div>
             </div>
@@ -219,8 +219,8 @@
             <div class="dash-card">
               <div class="dash-card-header">
                 <div>
-                  <h3>Alertas de reposición</h3>
-                  <p>Materiales agotados o bajo mínimo</p>
+                  <h3>Reorder Alerts</h3>
+                  <p>Out-of-stock or low-stock materials</p>
                 </div>
                 <span class="badge-count" id="dash-alert-count">0</span>
               </div>
@@ -230,10 +230,10 @@
             <div class="dash-card">
               <div class="dash-card-header">
                 <div>
-                  <h3>Obras activas</h3>
-                  <p>Consumo acumulado por proyecto</p>
+                  <h3>Active Job Sites</h3>
+                  <p>Cumulative usage by project</p>
                 </div>
-                <button class="btn-link" data-role="ADMIN" onclick="switchTab('obras')">Gestionar obras</button>
+                <button class="btn-link" data-role="ADMIN" onclick="switchTab('obras')">Manage Job Sites</button>
               </div>
               <div id="dash-works" class="works-list"></div>
             </div>
@@ -246,13 +246,13 @@
           <thead>
             <tr>
               <th>SKU</th>
-              <th>Producto</th>
-              <th>Categoría</th>
+              <th>Product</th>
+              <th>Category</th>
               <th>Stock</th>
-              <th>UM</th>
-              <th>Costo U. ($ USD)</th>
-              <th>Modificado por</th>
-              <th>Acciones</th>
+              <th>UOM</th>
+              <th>Unit Cost (USD)</th>
+              <th>Modified By</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="inventory-table-body"></tbody>
@@ -262,40 +262,40 @@
       <!-- CESTA DE ENTREGA CON N.º DE ORDEN Y N.º DASH -->
       <section id="tab-movil" class="tab-content">
         <div class="form-card no-print">
-          <h3>Generar Conduce de Entrega de Materiales</h3>
+          <h3>Generate Materials Delivery Note</h3>
           <div class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Destination Project / Job Site</label>
                 <select id="cesta-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Obra</option>
+                  <option value="">Select Job Site</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Contratista / Recibe</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Contractor / Received By</label>
                 <select id="cesta-contratista" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Contratista</option>
+                  <option value="">Select Contractor</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Entregado Por (Despachador)</label>
-                <input type="text" id="cesta-entregado" placeholder="Nombre de quien despacha" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Issued By (Warehouse Staff)</label>
+                <input type="text" id="cesta-entregado" placeholder="Name of person issuing materials" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 0.75rem; align-items: end; background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color);">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Seleccionar Material</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Select Material</label>
                 <select id="cesta-producto-select" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
-                  <option value="">Seleccione Producto</option>
+                  <option value="">Select Product</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Cantidad</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Quantity</label>
                 <input type="number" id="cesta-cantidad-input" min="1" placeholder="1" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
               <button type="button" class="btn-secondary" onclick="agregarACesta()" style="height: 38px;">
-                <i data-lucide="plus"></i> Agregar a la Cesta
+                <i data-lucide="plus"></i> Add to Delivery Cart
               </button>
             </div>
           </div>
@@ -304,32 +304,32 @@
         <div class="data-section print-area" style="background:#fff; padding: 2rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--header-bg); padding-bottom:1rem; margin-bottom:1.5rem;">
             <div>
-              <h2 style="color:var(--header-bg); font-size:1.4rem;">CONDUCE DE ENTREGA DE MATERIALES</h2>
-              <p style="color:var(--text-muted); font-size:0.85rem;">Easy Solutions - Control de Inventario</p>
+              <h2 style="color:var(--header-bg); font-size:1.4rem;">MATERIALS DELIVERY NOTE</h2>
+              <p style="color:var(--text-muted); font-size:0.85rem;">Easy Solutions - Inventory Control</p>
             </div>
             
             <!-- CONTENEDOR DE N.º DE ORDEN EN EL ENCABEZADO -->
             <div style="text-align:center; background:#f1f5f9; padding:0.5rem 1.25rem; border-radius:8px; border:1px solid var(--border-color);">
-              <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; display:block; letter-spacing:0.5px;">N.º DE ORDEN</span>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; display:block; letter-spacing:0.5px;">ORDER NO.</span>
               <strong id="print-num-orden" style="font-size:1.2rem; color:var(--primary-blue); font-family:monospace;">ORD-0000</strong>
             </div>
 
             <div style="text-align:right;">
-              <strong style="font-size:0.9rem;">Fecha: <span id="print-fecha">--/--/----</span></strong>
+              <strong style="font-size:0.9rem;">Date: <span id="print-fecha">--/--/----</span></strong>
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin-bottom:1.5rem; background:#f8fafc; padding:1rem; border-radius:6px;">
             <div>
-              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; display:block;">PROYECTO / OBRA:</span>
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; display:block;">PROJECT / JOB SITE:</span>
               <strong id="print-obra" style="font-size:0.95rem;">-</strong>
             </div>
             <div>
-              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; display:block;">CONTRATISTA / RECIBE:</span>
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; display:block;">CONTRACTOR / RECEIVED BY:</span>
               <strong id="print-contratista" style="font-size:0.95rem;">-</strong>
             </div>
             <div>
-              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; display:block;">ENTREGADO POR:</span>
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; display:block;">ISSUED BY:</span>
               <strong id="print-entregado" style="font-size:0.95rem;">-</strong>
             </div>
           </div>
@@ -338,32 +338,32 @@
   <thead>
     <tr>
       <th>SKU</th>
-      <th>Material / Descripción</th>
-      <th>Categoría</th>
-      <th style="text-align:center; color:var(--primary-blue);">N.º DASH</th>
-      <th style="text-align:center;">Cantidad Entregada</th>
-      <th class="no-print" style="text-align:center;">Acción</th>
+      <th>Material / Description</th>
+      <th>Category</th>
+      <th style="text-align:center; color:var(--primary-blue);">DASH NO.</th>
+      <th style="text-align:center;">Quantity Delivered</th>
+      <th class="no-print" style="text-align:center;">Action</th>
     </tr>
   </thead>
   <tbody id="cesta-items-body">
-    <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">La cesta está vacía. Seleccione materiales arriba.</td></tr>
+    <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">The delivery cart is empty. Select materials above.</td></tr>
   </tbody>
 </table>
 
           <div class="print-signatures" style="display:grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 4rem; padding-top: 1rem;">
             <div style="text-align:center; border-top: 1px solid #000; padding-top: 0.5rem;">
-              <strong>Firma Entregado Por</strong>
-              <p style="font-size:0.75rem; color:var(--text-muted);">Despachador Bodega</p>
+              <strong>Issued By Signature</strong>
+              <p style="font-size:0.75rem; color:var(--text-muted);">Warehouse Staff</p>
             </div>
             <div style="text-align:center; border-top: 1px solid #000; padding-top: 0.5rem;">
-              <strong>Firma Recibido Conforme</strong>
-              <p style="font-size:0.75rem; color:var(--text-muted);">Contratista / Responsable de Obra</p>
+              <strong>Received By Signature</strong>
+              <p style="font-size:0.75rem; color:var(--text-muted);">Contractor / Site Supervisor</p>
             </div>
           </div>
 
           <div class="no-print" style="display:flex; justify-content:flex-end; margin-top: 2rem; border-top:1px solid var(--border-color); padding-top: 1rem;">
             <button class="btn-primary" onclick="imprimirConduce()" style="padding: 0.75rem 2rem; font-size: 0.95rem;">
-              <i data-lucide="printer"></i> Imprimir Conduce de Entrega
+              <i data-lucide="printer"></i> Print Delivery Note
             </button>
           </div>
         </div>
@@ -372,58 +372,58 @@
       <!-- ENTRADAS / COMPRAS -->
       <section id="tab-compras" class="tab-content">
         <div class="form-card">
-          <h3>Registrar Compra de Material (Entrada)</h3>
+          <h3>Record Materials Purchase (Stock Receipt)</h3>
           <form id="purchase-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Producto</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Product</label>
                 <select id="compra-producto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Producto</option>
+                  <option value="">Select Product</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proveedor</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Supplier</label>
                 <select id="compra-proveedor" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Proveedor</option>
+                  <option value="">Select Supplier</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">N° Factura del Proveedor</label>
-                <input type="text" id="compra-factura" placeholder="Ej. F-98234" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Supplier Invoice No.</label>
+                <input type="text" id="compra-factura" placeholder="e.g. F-98234" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Cantidad</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Quantity</label>
                 <input type="number" id="compra-cantidad" min="1" placeholder="0" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" oninput="calcularTotalCompra()" required>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Costo Unitario ($ USD)</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Unit Cost (USD)</label>
                 <input type="number" step="0.01" id="compra-costo" placeholder="0.00" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" oninput="calcularTotalCompra()" required>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Estado de Pago</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Payment Status</label>
                 <select id="compra-estado-pago" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
-                  <option value="Pagada">Pagada</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Crédito">Crédito</option>
+                  <option value="Pagada">Paid</option>
+                  <option value="Pendiente">Pending</option>
+                  <option value="Crédito">Credit</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Código de Lote (Opcional)</label>
-                <input type="text" id="compra-lote" placeholder="Ej. LOTE-2026A" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Batch Code (Optional)</label>
+                <input type="text" id="compra-lote" placeholder="e.g. BATCH-2026A" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Fecha Vencimiento del Producto</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Product Expiration Date</label>
                 <input type="date" id="compra-venc-prod" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Observaciones / Notas</label>
-                <input type="text" id="compra-notas" placeholder="Condiciones de recepción, orden de compra..." style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Remarks / Notes</label>
+                <input type="text" id="compra-notas" placeholder="Receiving conditions, purchase order..." style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
             </div>
 
@@ -431,24 +431,24 @@
             <div class="tax-purchase-panel">
               <div class="tax-panel-header">
                 <div>
-                  <h4><i data-lucide="receipt-text"></i> Taxes / Impuestos de la compra</h4>
-                  <p>Indique la tasa o el monto exacto de impuestos de la factura. Si la compra no tiene impuestos, deje 0.</p>
+                  <h4><i data-lucide="receipt-text"></i> Purchase Sales Tax</h4>
+                  <p>Enter the sales tax rate or the exact amount shown on the invoice. Use 0 if no tax applies.</p>
                 </div>
               </div>
               <div class="tax-fields-grid">
                 <div>
-                  <label for="compra-fecha">Fecha de la compra</label>
+                  <label for="compra-fecha">Purchase Date</label>
                   <input type="date" id="compra-fecha" required onchange="sincronizarCicloTax()">
                 </div>
                 <div>
-                  <label for="compra-ciclo-tax">Ciclo de reporte (mes)</label>
+                  <label for="compra-ciclo-tax">Reporting Period (Month)</label>
                   <input type="month" id="compra-ciclo-tax" required>
                 </div>
                 <div>
-                  <label for="compra-tax-modo">Forma de calcular Tax</label>
+                  <label for="compra-tax-modo">Tax Calculation Method</label>
                   <select id="compra-tax-modo" onchange="actualizarModoTax()">
-                    <option value="PORCENTAJE">Porcentaje (%)</option>
-                    <option value="MONTO">Monto de factura ($)</option>
+                    <option value="PORCENTAJE">Percentage (%)</option>
+                    <option value="MONTO">Fixed Amount ($)</option>
                   </select>
                 </div>
                 <div>
@@ -460,41 +460,41 @@
                   <input type="number" id="compra-tax-monto" min="0" step="0.01" value="0.00" oninput="calcularTotalCompra()" disabled>
                 </div>
               </div>
-              <p class="tax-note">Los impuestos se controlan por separado y no aumentan el costo unitario ni las existencias del producto.</p>
+              <p class="tax-note">Taxes are tracked separately and do not increase unit cost or product stock.</p>
             </div>
 
             <div class="tax-purchase-footer">
               <div class="tax-amounts">
-                <div><span>Subtotal antes de Taxes</span><strong id="compra-subtotal-display">$0.00</strong></div>
-                <div><span>Taxes / Impuestos</span><strong id="compra-tax-display">$0.00</strong></div>
-                <div class="tax-amounts-total"><span>Total con Taxes</span><strong id="compra-total-display">$0.00</strong></div>
+                <div><span>Subtotal Before Tax</span><strong id="compra-subtotal-display">$0.00</strong></div>
+                <div><span>Sales Tax</span><strong id="compra-tax-display">$0.00</strong></div>
+                <div class="tax-amounts-total"><span>Total Including Tax</span><strong id="compra-total-display">$0.00</strong></div>
               </div>
-              <button type="submit" class="btn-primary" style="padding:0.6rem 1.5rem;"><i data-lucide="save"></i> Guardar Compra e Incrementar Inventario</button>
+              <button type="submit" class="btn-primary" style="padding:0.6rem 1.5rem;"><i data-lucide="save"></i> Save Purchase and Increase Stock</button>
             </div>
           </form>
         </div>
 
         <!-- CONTROL CONTABLE DE TAXES POR CICLO: MEJORA VISUAL ÚNICAMENTE -->
         <div class="data-section tax-report-section" style="margin-top: 1.5rem;">
-          <h3>Control Contable de Taxes por Ciclo</h3>
+          <h3>Sales Tax Accounting by Reporting Period</h3>
           <div class="data-section-body">
             <div class="tax-accounting-top">
               <div class="tax-accounting-heading">
-                <span class="tax-accounting-overline">RESUMEN CONTABLE</span>
-                <p>Consulta los impuestos por periodo y exporta la información para contabilidad.</p>
+                <span class="tax-accounting-overline">ACCOUNTING SUMMARY</span>
+                <p>Review taxes by reporting period and export records for accounting.</p>
               </div>
 
               <div class="tax-accounting-toolbar">
                 <div class="tax-accounting-filter">
-                  <label for="tax-ciclo-filtro">Ciclo mensual a consultar</label>
+                  <label for="tax-ciclo-filtro">Monthly Reporting Period</label>
                   <input type="month" id="tax-ciclo-filtro" onchange="renderizarControlTaxes()">
                 </div>
                 <div class="tax-accounting-actions">
                   <button type="button" class="btn-secondary" onclick="mostrarTodosLosCiclosTax()">
-                    <i data-lucide="calendar-days"></i> Todos los ciclos
+                    <i data-lucide="calendar-days"></i> All Periods
                   </button>
                   <button type="button" class="btn-secondary" onclick="exportarTaxesCSV()">
-                    <i data-lucide="download"></i> Exportar CSV
+                    <i data-lucide="download"></i> Export CSV
                   </button>
                 </div>
               </div>
@@ -502,70 +502,70 @@
 
             <div class="tax-accounting-period">
               <span class="tax-accounting-status-dot" aria-hidden="true"></span>
-              <p class="tax-cycle-caption" id="tax-ciclo-etiqueta">Mostrando todos los ciclos contables</p>
+              <p class="tax-cycle-caption" id="tax-ciclo-etiqueta">Showing all reporting periods</p>
             </div>
 
             <div class="tax-summary-grid">
               <div class="tax-summary-kpi tax-accounting-card--subtotal">
                 <span class="tax-accounting-card-icon"><i data-lucide="shopping-cart"></i></span>
-                <span class="tax-accounting-card-label">Compras sin Taxes</span>
+                <span class="tax-accounting-card-label">Purchases Before Tax</span>
                 <strong id="tax-kpi-subtotal">$0.00</strong>
-                <span class="tax-accounting-card-hint">Subtotal registrado</span>
+                <span class="tax-accounting-card-hint">Recorded subtotal</span>
               </div>
               <div class="tax-summary-kpi tax-accounting-card--registered">
                 <span class="tax-accounting-card-icon"><i data-lucide="receipt-text"></i></span>
-                <span class="tax-accounting-card-label">Taxes registrados</span>
+                <span class="tax-accounting-card-label">Recorded Sales Tax</span>
                 <strong id="tax-kpi-registrados">$0.00</strong>
-                <span class="tax-accounting-card-hint">Impuestos del periodo</span>
+                <span class="tax-accounting-card-hint">Taxes for this period</span>
               </div>
               <div class="tax-summary-kpi tax-accounting-card--reported">
                 <span class="tax-accounting-card-icon"><i data-lucide="check-circle-2"></i></span>
-                <span class="tax-accounting-card-label">Taxes reportados</span>
+                <span class="tax-accounting-card-label">Reported Sales Tax</span>
                 <strong id="tax-kpi-reportados">$0.00</strong>
-                <span class="tax-accounting-card-hint">Marcados como reportados</span>
+                <span class="tax-accounting-card-hint">Marked as reported</span>
               </div>
               <div class="tax-summary-kpi tax-accounting-card--pending">
                 <span class="tax-accounting-card-icon"><i data-lucide="clock-3"></i></span>
-                <span class="tax-accounting-card-label">Taxes pendientes</span>
+                <span class="tax-accounting-card-label">Pending Sales Tax</span>
                 <strong id="tax-kpi-pendientes">$0.00</strong>
-                <span class="tax-accounting-card-hint">Por revisar o reportar</span>
+                <span class="tax-accounting-card-hint">Awaiting review or reporting</span>
               </div>
               <div class="tax-summary-kpi tax-accounting-card--total">
                 <span class="tax-accounting-card-icon"><i data-lucide="wallet"></i></span>
-                <span class="tax-accounting-card-label">Total compras con Taxes</span>
+                <span class="tax-accounting-card-label">Total Purchases Including Tax</span>
                 <strong id="tax-kpi-total">$0.00</strong>
-                <span class="tax-accounting-card-hint">Subtotal + impuestos</span>
+                <span class="tax-accounting-card-hint">Subtotal + sales tax</span>
               </div>
             </div>
 
             <div class="tax-accounting-legal-note">
               <i data-lucide="info" aria-hidden="true"></i>
-              <p><strong>Nota contable:</strong> “Reportado” es una marca interna de control, no una constancia de declaración o pago ante autoridades fiscales. Solo Administración puede cambiarla.</p>
+              <p><strong>Accounting Note:</strong> “Reported” is an internal accounting status, not proof of tax filing or payment. Only administrators can change it.</p>
             </div>
           </div>
         </div>
 
         <div class="data-section tax-history-section" style="margin-top: 1.5rem;">
-          <h3>Historial de Entradas / Compras Registradas</h3>
+          <h3>Purchase / Stock Receipt History</h3>
           <div class="tax-table-scroll">
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Fecha compra</th>
-                <th>Factura</th>
-                <th>Producto</th>
-                <th>Proveedor</th>
-                <th>Cantidad</th>
-                <th>Costo U. ($)</th>
+                <th>Purchase Date</th>
+                <th>Invoice</th>
+                <th>Product</th>
+                <th>Supplier</th>
+                <th>Quantity</th>
+                <th>Unit Cost ($)</th>
                 <th>Subtotal ($)</th>
                 <th>Sales Tax</th>
-                <th>Taxes ($)</th>
-                <th>Total con Taxes ($)</th>
-                <th>Ciclo contable</th>
-                <th>Estado Tax</th>
-                <th>Estado Pago</th>
-                <th>Registrado por</th>
-                <th>Acción contable</th>
+                <th>Sales Tax ($)</th>
+                <th>Total Including Tax ($)</th>
+                <th>Accounting Period</th>
+                <th>Tax Status</th>
+                <th>Payment Status</th>
+                <th>Recorded By</th>
+                <th>Accounting Actions</th>
               </tr>
             </thead>
             <tbody id="purchases-table-body"></tbody>
@@ -577,43 +577,43 @@
       <!-- SALIDAS / ENTREGAS -->
       <section id="tab-salidas" class="tab-content">
         <div class="form-card">
-          <h3 style="background: var(--primary-blue);">Registrar Salida / Entrega de Material</h3>
+          <h3 style="background: var(--primary-blue);">Record Materials Issue / Delivery</h3>
           <form id="dispatch-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Producto a Despachar</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Product to Deliver</label>
                 <select id="salida-producto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Producto</option>
+                  <option value="">Select Product</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Proyecto / Obra Destino</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Destination Project / Job Site</label>
                 <select id="salida-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Obra</option>
+                  <option value="">Select Job Site</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Solicitante / Recibe (Contratista)</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Requested / Received By (Contractor)</label>
                 <select id="salida-solicitante" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;" required>
-                  <option value="">Seleccione Contratista</option>
+                  <option value="">Select Contractor</option>
                 </select>
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Cantidad a Salir</label>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Quantity to Issue</label>
                 <input type="number" id="salida-cantidad" min="1" placeholder="0" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Motivo / Observaciones</label>
-                <input type="text" id="salida-motivo" placeholder="Ej. Instalación de molduras / Avance de obra etapa 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Reason / Notes</label>
+                <input type="text" id="salida-motivo" placeholder="e.g. Trim installation / Phase 2 progress" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
               </div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
               <button type="submit" class="btn-primary" style="background: var(--primary-blue); padding:0.6rem 1.5rem;">
-                <i data-lucide="arrow-up-right"></i> Registrar Salida de Inventario
+                <i data-lucide="arrow-up-right"></i> Record Stock Issue
               </button>
             </div>
           </form>
@@ -623,23 +623,23 @@
         <!-- DEVOLUCIONES PARCIALES: solo esta sección nueva, sin alterar el diseño original -->
         <div class="form-card" style="margin-top: 1.5rem;">
           <h3 style="background: var(--header-green); display:flex; align-items:center; gap:0.5rem;">
-            <i data-lucide="package-check"></i> Devolución a Inventario General (completa o parcial)
+            <i data-lucide="package-check"></i> Return to General Inventory (Full or Partial)
           </h3>
           <form id="return-form" class="data-section-body" style="display:flex; flex-direction:column; gap:1rem;">
             <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
-              Seleccione la entrega original y la cantidad recuperada. Admite <strong>0.5</strong>, <strong>1/2</strong> o <strong>1/4</strong>.
-              La cantidad se reintegra al <strong>inventario general</strong> y queda registrada en Kardex. Registre solo material utilizable.
+              Select the original delivery and the quantity returned. Accepts <strong>0.5</strong>, <strong>1/2</strong> o <strong>1/4</strong>.
+              The returned quantity is added back to <strong>general inventory</strong> and recorded in the Stock Ledger. Only return usable materials.
             </p>
             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem;">
               <div>
-                <label for="devolucion-salida" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Entrega de origen *</label>
+                <label for="devolucion-salida" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Original Delivery *</label>
                 <select id="devolucion-salida" required onchange="actualizarDisponibilidadDevolucion(); reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; color:var(--text-dark); font-size:0.85rem;">
-                  <option value="">Seleccione una entrega anterior</option>
+                  <option value="">Select a Previous Delivery</option>
                 </select>
               </div>
               <div>
-                <label for="devolucion-cantidad" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Cantidad que regresa *</label>
-                <input id="devolucion-cantidad" type="text" inputmode="decimal" autocomplete="off" placeholder="Ej. 0.5 o 1/2" required maxlength="16" oninput="mostrarVistaCantidadDevolucion(); reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
+                <label for="devolucion-cantidad" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Quantity Returned *</label>
+                <input id="devolucion-cantidad" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 0.5 or 1/2" required maxlength="16" oninput="mostrarVistaCantidadDevolucion(); reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
                 <div style="display:flex; gap:0.35rem; margin-top:0.4rem; flex-wrap:wrap;">
                   <button type="button" class="btn-cancel" onclick="establecerFraccionDevolucion('1/4')" style="padding:0.24rem 0.55rem; font-size:0.73rem;">1/4</button>
                   <button type="button" class="btn-cancel" onclick="establecerFraccionDevolucion('1/2')" style="padding:0.24rem 0.55rem; font-size:0.73rem;">1/2</button>
@@ -648,55 +648,55 @@
                 </div>
               </div>
               <div>
-                <label for="devolucion-estado" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Condición del material *</label>
+                <label for="devolucion-estado" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Material Condition *</label>
                 <select id="devolucion-estado" required onchange="reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;">
-                  <option value="BUENO">Completo / utilizable</option>
-                  <option value="PARCIAL_APROVECHABLE">Abierto / parcial y aprovechable</option>
+                  <option value="BUENO">Full / Usable</option>
+                  <option value="PARCIAL_APROVECHABLE">Opened / Partially Used but Usable</option>
                 </select>
               </div>
             </div>
             <div>
-              <label for="devolucion-notas" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Observaciones (opcional)</label>
-              <input id="devolucion-notas" type="text" maxlength="250" placeholder="Ej. Regresa media lata de pintura en buen estado" oninput="reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
+              <label for="devolucion-notas" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Notes (Optional)</label>
+              <input id="devolucion-notas" type="text" maxlength="250" placeholder="e.g. Half a can of paint returned in usable condition" oninput="reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; border-top:1px solid var(--border-color); padding-top:1rem;">
               <div style="color:var(--text-muted); font-size:0.8rem; line-height:1.5;">
-                <div id="devolucion-disponible">Seleccione una salida para consultar cuánto puede devolverse.</div>
+                <div id="devolucion-disponible">Select an issue to check the remaining returnable quantity.</div>
                 <div id="devolucion-vista-cantidad" style="font-weight:700; color:var(--primary-blue);"></div>
               </div>
               <button id="btn-guardar-devolucion" type="submit" class="btn-primary" style="padding:0.65rem 1.3rem;">
-                <i data-lucide="corner-down-left"></i> Reintegrar al Inventario General
+                <i data-lucide="corner-down-left"></i> Return to General Inventory
               </button>
             </div>
           </form>
         </div>
 
         <div class="data-section" style="margin-top:1.5rem;">
-          <h3>Historial de Devoluciones al Inventario General</h3>
+          <h3>General Inventory Returns History</h3>
           <div style="overflow-x:auto;">
             <table class="custom-table">
               <thead>
-                <tr><th>Fecha</th><th>SKU / Producto</th><th>Origen</th><th>Cantidad Devuelta</th><th>Condición</th><th>Recibido por</th><th>Observación / Kardex</th></tr>
+                <tr><th>Date</th><th>SKU / Product</th><th>Source</th><th>Quantity Returned</th><th>Condition</th><th>Received By</th><th>Notes / Stock Ledger</th></tr>
               </thead>
               <tbody id="returns-table-body">
-                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Aún no se han registrado devoluciones.</td></tr>
+                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No returns have been recorded yet.</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Historial de Entregas y Salidas</h3>
+          <h3>Delivery / Stock Issue History</h3>
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th>Obra Destino</th>
-                <th>Solicitante</th>
-                <th>Cantidad</th>
-                <th>Motivo</th>
-                <th>Despachado por</th>
+                <th>Date</th>
+                <th>Product</th>
+                <th>Destination Job Site</th>
+                <th>Requested By</th>
+                <th>Quantity</th>
+                <th>Reason</th>
+                <th>Dispatched By</th>
               </tr>
             </thead>
             <tbody id="dispatches-table-body"></tbody>
@@ -706,28 +706,28 @@
 
       <section id="tab-movimientos" class="tab-content">
         <div class="form-card">
-          <h3>Registrar Entrada / Salida</h3>
+          <h3>Record Stock Receipt / Issue</h3>
           <form id="movement-form" class="inline-form">
-            <select id="mov-producto" required><option value="">Seleccione Producto</option></select>
+            <select id="mov-producto" required><option value="">Select Product</option></select>
             <select id="mov-tipo" required>
-              <option value="ENTRADA">Entrada (+)</option>
-              <option value="SALIDA">Salida (-)</option>
+              <option value="ENTRADA">Receipt (+)</option>
+              <option value="SALIDA">Issue (-)</option>
             </select>
-            <input type="number" id="mov-cantidad" placeholder="Cantidad" min="1" required>
-            <input type="text" id="mov-concepto" placeholder="Concepto / Motivo" required>
-            <button type="submit" class="btn-secondary">Registrar Movimiento</button>
+            <input type="number" id="mov-cantidad" placeholder="Quantity" min="1" required>
+            <input type="text" id="mov-concepto" placeholder="Description / Reason" required>
+            <button type="submit" class="btn-secondary">Record Transaction</button>
           </form>
         </div>
 
         <table class="custom-table">
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>Producto</th>
-              <th>Tipo</th>
-              <th>Cantidad</th>
-              <th>Concepto</th>
-              <th>Realizado por</th>
+              <th>Date</th>
+              <th>Product</th>
+              <th>Type</th>
+              <th>Quantity</th>
+              <th>Description</th>
+              <th>Performed By</th>
             </tr>
           </thead>
           <tbody id="movements-table-body"></tbody>
@@ -737,60 +737,60 @@
       <!-- PESTAÑA: PROYECTOS / OBRAS -->
       <section id="tab-obras" class="tab-content">
         <div class="form-card">
-          <h3 style="background: var(--primary-blue);">Registrar Nuevo Proyecto / Obra</h3>
+          <h3 style="background: var(--primary-blue);">Register New Project / Job Site</h3>
           <form id="obra-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Dirección / Nombre de la Obra</label>
-                <input type="text" id="obra-direccion" placeholder="Ej. 417 Liberty Circle" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Job Site Address / Name</label>
+                <input type="text" id="obra-direccion" placeholder="e.g. 417 Liberty Circle" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Lote (Lot)</label>
-                <input type="text" id="obra-lote" placeholder="Ej. Lot 12" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Lot</label>
+                <input type="text" id="obra-lote" placeholder="e.g. Lot 12" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Fase (Phase)</label>
-                <input type="text" id="obra-fase" placeholder="Ej. Phase 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Phase</label>
+                <input type="text" id="obra-fase" placeholder="e.g. Phase 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Subdivisión (Subdivision)</label>
-                <input type="text" id="obra-subdivision" placeholder="Ej. Oak Ridge Estates" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Subdivision</label>
+                <input type="text" id="obra-subdivision" placeholder="e.g. Oak Ridge Estates" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Código Postal (Zip Code)</label>
-                <input type="text" id="obra-zip" placeholder="Ej. 32801" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">ZIP Code</label>
+                <input type="text" id="obra-zip" placeholder="e.g. 32801" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">Condado (County)</label>
-                <input type="text" id="obra-county" placeholder="Ej. Orange County" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted)">County</label>
+                <input type="text" id="obra-county" placeholder="e.g. Orange County" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
               <button type="submit" class="btn-primary" style="background: var(--primary-blue); padding:0.6rem 1.5rem;">
-                <i data-lucide="folder-plus"></i> Guardar Proyecto / Obra
+                <i data-lucide="folder-plus"></i> Save Project / Job Site
               </button>
             </div>
           </form>
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Listado de Proyectos y Obras Activas</h3>
+          <h3>Active Projects and Job Sites</h3>
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Dirección</th>
-                <th>Lote</th>
-                <th>Fase</th>
-                <th>Subdivisión</th>
-                <th>C.P. (Zip)</th>
-                <th>Condado (County)</th>
-                <th>Estado</th>
-                <th>Modificado por</th>
-                <th>Acciones</th>
+                <th>Address</th>
+                <th>Lot</th>
+                <th>Phase</th>
+                <th>Subdivision</th>
+                <th>ZIP Code</th>
+                <th>County</th>
+                <th>Status</th>
+                <th>Modified By</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="obras-table-body"></tbody>
@@ -919,7 +919,7 @@
                 <th>SSN / ITIN</th>
                 <th>Address</th>
                 <th>Status</th>
-                <th>Modificado por</th>
+                <th>Modified By</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -932,7 +932,7 @@
       <section id="tab-proveedores" class="tab-content">
         <div class="form-card">
           <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="truck"></i> Registrar / Editar Proveedor
+            <i data-lucide="truck"></i> Add / Edit Supplier
           </h3>
           
           <form id="provider-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -940,12 +940,12 @@
 
             <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Nombre de la Empresa / Razón Social *</label>
-                <input type="text" id="prov-nombre" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required placeholder="Ej. IMCO Lumber">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Company / Legal Name *</label>
+                <input type="text" id="prov-nombre" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" required placeholder="e.g. IMCO Lumber">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Contacto Principal</label>
-                <input type="text" id="prov-contacto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Ej. John Doe">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Primary Contact</label>
+                <input type="text" id="prov-contacto" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="e.g. John Doe">
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Tax ID / EIN</label>
@@ -955,25 +955,25 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 1fr; gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Teléfono</label>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Phone</label>
                 <input type="text" id="prov-telefono" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="(956) 000-0000">
               </div>
               <div>
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Email</label>
-                <input type="email" id="prov-email" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="ventas@proveedor.com">
+                <input type="email" id="prov-email" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="sales@supplier.com">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Dirección</label>
-                <input type="text" id="prov-direccion" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Ciudad, Estado">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Address</label>
+                <input type="text" id="prov-direccion" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="City, State">
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Categoría Principal</label>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Primary Category</label>
                 <select id="prov-categoria" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background-color:#fff; color:var(--text-dark); font-size:0.85rem;">
-                  <option value="Materiales de Construcción">Materiales de Construcción</option>
-                  <option value="Madera y Molduras">Madera y Molduras</option>
-                  <option value="Plomería y Electricidad">Plomería y Electricidad</option>
-                  <option value="Pintura y Acabados">Pintura y Acabados</option>
-                  <option value="Herramientas y Equipos">Herramientas y Equipos</option>
+                  <option value="Materiales de Construcción">Construction Materials</option>
+                  <option value="Madera y Molduras">Lumber and Trim</option>
+                  <option value="Plomería y Electricidad">Plumbing and Electrical</option>
+                  <option value="Pintura y Acabados">Paint and Finishes</option>
+                  <option value="Herramientas y Equipos">Tools and Equipment</option>
                   <option value="General">General</option>
                 </select>
               </div>
@@ -981,25 +981,25 @@
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
               <button type="submit" class="btn-primary" style="background: var(--header-green); padding: 0.6rem 1.5rem;">
-                <i data-lucide="save"></i> Guardar Proveedor
+                <i data-lucide="save"></i> Save Supplier
               </button>
             </div>
           </form>
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Directorio de Proveedores</h3>
+          <h3>Supplier Directory</h3>
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Empresa / Razón Social</th>
-                <th>Contacto</th>
-                <th>Teléfono</th>
+                <th>Company / Legal Name</th>
+                <th>Contact</th>
+                <th>Phone</th>
                 <th>Email</th>
-                <th>Categoría</th>
+                <th>Category</th>
                 <th>Tax ID</th>
-                <th>Modificado por</th>
-                <th>Acciones</th>
+                <th>Modified By</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="providers-table-body"></tbody>
@@ -1011,47 +1011,47 @@
       <section id="tab-vencimientos" class="tab-content">
         <div class="control-banner" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
           <div>
-            <span class="sub-tag" style="background: rgba(255,255,255,0.15); color: #fff;">SEGUIMIENTO DE ENTREGAS</span>
+            <span class="sub-tag" style="background: rgba(255,255,255,0.15); color: #fff;">DELIVERY TRACKING</span>
             <h2>Request Tracking Center</h2>
-            <p>Monitoreo en tiempo real del estado de despacho y transporte de solicitudes aprobadas.</p>
+            <p>Real-time tracking of approved requests and deliveries.</p>
           </div>
         </div>
 
         <div class="kpi-grid" style="margin-top: 1.5rem;">
           <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-            <span class="kpi-title">LISTOS EN BODEGA</span>
+            <span class="kpi-title">READY AT WAREHOUSE</span>
             <h3 id="track-kpi-listos" style="color:#3b82f6;">0</h3>
-            <span class="kpi-sub">Empaquetados / Por salir</span>
+            <span class="kpi-sub">Packed / Awaiting Dispatch</span>
           </div>
           <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
-            <span class="kpi-title">EN TRÁNSITO</span>
+            <span class="kpi-title">IN TRANSIT</span>
             <h3 id="track-kpi-transito" style="color:#f59e0b;">0</h3>
-            <span class="kpi-sub">En camino a la obra</span>
+            <span class="kpi-sub">On the way to the job site</span>
           </div>
           <div class="kpi-card" style="border-left: 4px solid #10b981;">
-            <span class="kpi-title">ENTREGADOS</span>
+            <span class="kpi-title">DELIVERED</span>
             <h3 id="track-kpi-entregados" style="color:#10b981;">0</h3>
-            <span class="kpi-sub">En el punto de obra</span>
+            <span class="kpi-sub">At the job site</span>
           </div>
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Solicitudes Aprobadas en Seguimiento</h3>
+          <h3>Approved Requests Under Tracking</h3>
           <table class="custom-table">
             <thead>
               <tr>
-                <th>N.º Orden</th>
-                <th>Fecha Aprobación</th>
-                <th>Obra Destino</th>
-                <th>Contratista</th>
-                <th>Materiales</th>
-                <th>Despachado Por</th>
-                <th>Estado de Entrega</th>
-                <th>Acción de Rastreo</th>
+                <th>Order No.</th>
+                <th>Approval Date</th>
+                <th>Destination Job Site</th>
+                <th>Contractor</th>
+                <th>Materials</th>
+                <th>Dispatched By</th>
+                <th>Delivery Status</th>
+                <th>Tracking Action</th>
               </tr>
             </thead>
             <tbody id="tracking-table-body">
-              <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay solicitudes aprobadas en seguimiento.</td></tr>
+              <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No approved requests to track.</td></tr>
             </tbody>
           </table>
         </div>
@@ -1061,26 +1061,26 @@
       <section id="tab-etiquetas" class="tab-content">
         <div class="form-card">
           <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="file-plus"></i> Crear Nueva Solicitud de Materiales (Request)
+            <i data-lucide="file-plus"></i> Create New Material Request
           </h3>
           
           <div class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 0.75rem;">
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Proyecto / Obra Destino *</label>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Destination Project / Job Site *</label>
                 <select id="req-obra" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;" required>
-                  <option value="">Seleccione Obra</option>
+                  <option value="">Select Job Site</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Contratista / Recibe *</label>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Contractor / Received By *</label>
                 <select id="req-contratista" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;" required>
-                  <option value="">Seleccione Contratista</option>
+                  <option value="">Select Contractor</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Notas / Instrucciones de Entrega</label>
-                <input type="text" id="req-notas" placeholder="Ej. Entregar en la mañana / Frente de obra 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Delivery Notes / Instructions</label>
+                <input type="text" id="req-notas" placeholder="e.g. Deliver in the morning / Work area 2" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
             </div>
 
@@ -1088,15 +1088,15 @@
               <div>
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Material</label>
                 <select id="req-producto-select" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;">
-                  <option value="">Seleccione Producto</option>
+                  <option value="">Select Product</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Cantidad Requerida</label>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-dark);">Quantity Requested</label>
                 <input type="number" id="req-cantidad-input" min="1" placeholder="1" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px;">
               </div>
               <button type="button" class="btn-secondary" onclick="agregarItemRequest()" style="height: 38px;">
-                <i data-lucide="plus"></i> Añadir a Lista
+                <i data-lucide="plus"></i> Add to List
               </button>
             </div>
 
@@ -1104,38 +1104,38 @@
               <thead>
                 <tr>
                   <th>SKU</th>
-                  <th>Producto</th>
-                  <th>Categoría</th>
-                  <th style="text-align:center;">Cantidad</th>
-                  <th style="text-align:center;">Acción</th>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th style="text-align:center;">Quantity</th>
+                  <th style="text-align:center;">Action</th>
                 </tr>
               </thead>
               <tbody id="req-items-body">
-                <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay materiales agregados a esta solicitud.</td></tr>
+                <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No materials have been added to this request.</td></tr>
               </tbody>
             </table>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
               <button type="button" class="btn-primary" onclick="guardarRequest()" style="background: var(--header-green); padding: 0.65rem 1.8rem; font-size: 0.9rem;">
-                <i data-lucide="send"></i> Generar y Enviar Request
+                <i data-lucide="send"></i> Create and Submit Request
               </button>
             </div>
           </div>
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Solicitudes Registradas (Requests)</h3>
+          <h3>Submitted Material Requests</h3>
           <table class="custom-table">
             <thead>
               <tr>
-                <th>N.º Orden</th>
-                <th>Fecha</th>
-                <th>Obra Destino</th>
-                <th>Contratista</th>
-                <th>Materiales Solicitados</th>
-                <th>Estado</th>
-                <th>Solicitado Por</th>
-                <th>Acciones</th>
+                <th>Order No.</th>
+                <th>Date</th>
+                <th>Destination Job Site</th>
+                <th>Contractor</th>
+                <th>Requested Materials</th>
+                <th>Status</th>
+                <th>Requested By</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="requests-table-body"></tbody>
@@ -1143,7 +1143,7 @@
         </div>
       </section>
 
-      <section id="tab-reportes" class="tab-content"><div class="data-section"><h3>Reportes</h3><div class="data-section-body"><p>Módulo en desarrollo.</p></div></div></section>
+      <section id="tab-reportes" class="tab-content"><div class="data-section"><h3>Reports</h3><div class="data-section-body"><p>Module under development.</p></div></div></section>
 
     </main>
   </div>
@@ -1151,17 +1151,17 @@
   <!-- MODAL: CREAR/EDITAR PRODUCTO -->
   <div id="modal-product" class="modal">
     <div class="modal-content">
-      <h3>Crear Nuevo Material</h3>
+      <h3>Create New Material</h3>
       <form id="product-form">
-        <input type="text" id="prod-sku" placeholder="SKU / Código (ej. MAT-003)" required>
-        <input type="text" id="prod-nombre" placeholder="Nombre del Material" required>
-        <input type="text" id="prod-categoria" placeholder="Categoría (ej. Mampostería)" required>
-        <input type="number" id="prod-stock" placeholder="Stock Inicial" required>
-        <input type="number" id="prod-min" placeholder="Stock Mínimo" required>
-        <input type="number" step="0.01" id="prod-costo" placeholder="Costo Unitario ($ USD)" required>
+        <input type="text" id="prod-sku" placeholder="SKU / Code (e.g. MAT-003)" required>
+        <input type="text" id="prod-nombre" placeholder="Material Name" required>
+        <input type="text" id="prod-categoria" placeholder="Category (e.g. Masonry)" required>
+        <input type="number" id="prod-stock" placeholder="Initial Stock" required>
+        <input type="number" id="prod-min" placeholder="Minimum Stock" required>
+        <input type="number" step="0.01" id="prod-costo" placeholder="Unit Cost (USD)" required>
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar Producto</button>
+          <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Product</button>
         </div>
       </form>
     </div>
@@ -1170,26 +1170,26 @@
   <!-- MODAL: AJUSTAR TAXES DE UNA COMPRA, SIN CAMBIAR STOCK -->
   <div id="modal-editar-tax" class="modal">
     <div class="modal-content tax-edit-modal">
-      <h3><i data-lucide="receipt-text"></i> Editar Taxes de Factura</h3>
-      <p class="tax-note" id="tax-edit-factura-label">Seleccione una compra para editar sus impuestos.</p>
+      <h3><i data-lucide="receipt-text"></i> Edit Invoice Sales Tax</h3>
+      <p class="tax-note" id="tax-edit-factura-label">Select a purchase to edit its sales tax.</p>
       <form id="tax-edit-form" onsubmit="guardarEdicionTax(event)">
         <div class="tax-edit-fields">
-          <div><label for="tax-edit-fecha">Fecha de compra</label><input type="date" id="tax-edit-fecha" required></div>
-          <div><label for="tax-edit-ciclo">Ciclo contable</label><input type="month" id="tax-edit-ciclo" required></div>
-          <div><label for="tax-edit-modo">Tipo de Tax</label>
+          <div><label for="tax-edit-fecha">Purchase Date</label><input type="date" id="tax-edit-fecha" required></div>
+          <div><label for="tax-edit-ciclo">Accounting Period</label><input type="month" id="tax-edit-ciclo" required></div>
+          <div><label for="tax-edit-modo">Tax Method</label>
             <select id="tax-edit-modo" onchange="actualizarModoEdicionTax()">
-              <option value="PORCENTAJE">Porcentaje (%)</option>
-              <option value="MONTO">Monto exacto ($)</option>
+              <option value="PORCENTAJE">Percentage (%)</option>
+              <option value="MONTO">Exact Amount ($)</option>
             </select>
           </div>
           <div><label for="tax-edit-porcentaje">Sales Tax (%)</label><input type="number" min="0" max="100" step="0.0001" id="tax-edit-porcentaje" oninput="calcularEdicionTax()"></div>
           <div><label for="tax-edit-monto">Tax Amount ($)</label><input type="number" min="0" step="0.01" id="tax-edit-monto" oninput="calcularEdicionTax()"></div>
         </div>
-        <div class="tax-edit-total">Nuevo total de factura: <strong id="tax-edit-total-display">$0.00</strong></div>
-        <p class="tax-note">Si modifica los impuestos de una factura ya reportada, su estado volverá a Pendiente para revisión.</p>
+        <div class="tax-edit-total">Updated Invoice Total: <strong id="tax-edit-total-display">$0.00</strong></div>
+        <p class="tax-note">Changing taxes on a reported invoice will reset its status to Pending for review.</p>
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="cerrarEdicionTax()">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar Taxes</button>
+          <button type="button" class="btn-cancel" onclick="cerrarEdicionTax()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Sales Tax</button>
         </div>
       </form>
     </div>
@@ -1199,24 +1199,24 @@
   <div id="modal-change-password" class="modal">
     <div class="modal-content" style="max-width: 400px;">
       <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-dark);">
-        <i data-lucide="key-round" style="color: var(--primary-blue);"></i> Cambiar Contraseña
+        <i data-lucide="key-round" style="color: var(--primary-blue);"></i> Change Password
       </h3>
       <form id="change-password-form" onsubmit="guardarNuevaContrasena(event)" style="display: flex; flex-direction: column; gap: 1rem;">
         <div>
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Contraseña Actual</label>
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Current Password</label>
           <input type="password" id="pass-actual" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="••••••••">
         </div>
         <div>
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Nueva Contraseña</label>
-          <input type="password" id="pass-nueva" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="Mínimo 6 caracteres">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">New Password</label>
+          <input type="password" id="pass-nueva" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="At least 6 characters">
         </div>
         <div>
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Confirmar Nueva Contraseña</label>
-          <input type="password" id="pass-confirmar" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="Repite la nueva contraseña">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Confirm New Password</label>
+          <input type="password" id="pass-confirmar" style="width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); border-radius: 6px;" required placeholder="Repeat new password">
         </div>
         <div class="modal-actions" style="margin-top: 0.5rem;">
-          <button type="button" class="btn-cancel" onclick="closeChangePasswordModal()">Cancelar</button>
-          <button type="submit" class="btn-primary" style="background: var(--header-green);">Actualizar Contraseña</button>
+          <button type="button" class="btn-cancel" onclick="closeChangePasswordModal()">Cancel</button>
+          <button type="submit" class="btn-primary" style="background: var(--header-green);">Update Password</button>
         </div>
       </form>
     </div>
@@ -1224,6 +1224,6 @@
 
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
-  <script src="app.js?v=1.5.0"></script>
+  <script src="app.js?v=1.6.0-en"></script>
 </body>
 </html>
