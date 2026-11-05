@@ -619,6 +619,72 @@
           </form>
         </div>
 
+
+        <!-- DEVOLUCIONES PARCIALES: solo esta sección nueva, sin alterar el diseño original -->
+        <div class="form-card" style="margin-top: 1.5rem;">
+          <h3 style="background: var(--header-green); display:flex; align-items:center; gap:0.5rem;">
+            <i data-lucide="package-check"></i> Devolución a Inventario General (completa o parcial)
+          </h3>
+          <form id="return-form" class="data-section-body" style="display:flex; flex-direction:column; gap:1rem;">
+            <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+              Seleccione la entrega original y la cantidad recuperada. Admite <strong>0.5</strong>, <strong>1/2</strong> o <strong>1/4</strong>.
+              La cantidad se reintegra al <strong>inventario general</strong> y queda registrada en Kardex. Registre solo material utilizable.
+            </p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem;">
+              <div>
+                <label for="devolucion-salida" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Entrega de origen *</label>
+                <select id="devolucion-salida" required onchange="actualizarDisponibilidadDevolucion(); reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; color:var(--text-dark); font-size:0.85rem;">
+                  <option value="">Seleccione una entrega anterior</option>
+                </select>
+              </div>
+              <div>
+                <label for="devolucion-cantidad" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Cantidad que regresa *</label>
+                <input id="devolucion-cantidad" type="text" inputmode="decimal" autocomplete="off" placeholder="Ej. 0.5 o 1/2" required maxlength="16" oninput="mostrarVistaCantidadDevolucion(); reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
+                <div style="display:flex; gap:0.35rem; margin-top:0.4rem; flex-wrap:wrap;">
+                  <button type="button" class="btn-cancel" onclick="establecerFraccionDevolucion('1/4')" style="padding:0.24rem 0.55rem; font-size:0.73rem;">1/4</button>
+                  <button type="button" class="btn-cancel" onclick="establecerFraccionDevolucion('1/2')" style="padding:0.24rem 0.55rem; font-size:0.73rem;">1/2</button>
+                  <button type="button" class="btn-cancel" onclick="establecerFraccionDevolucion('3/4')" style="padding:0.24rem 0.55rem; font-size:0.73rem;">3/4</button>
+                  <button type="button" class="btn-cancel" onclick="establecerFraccionDevolucion('1')" style="padding:0.24rem 0.55rem; font-size:0.73rem;">1</button>
+                </div>
+              </div>
+              <div>
+                <label for="devolucion-estado" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Condición del material *</label>
+                <select id="devolucion-estado" required onchange="reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; background:#fff; font-size:0.85rem;">
+                  <option value="BUENO">Completo / utilizable</option>
+                  <option value="PARCIAL_APROVECHABLE">Abierto / parcial y aprovechable</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label for="devolucion-notas" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Observaciones (opcional)</label>
+              <input id="devolucion-notas" type="text" maxlength="250" placeholder="Ej. Regresa media lata de pintura en buen estado" oninput="reiniciarOperacionDevolucion()" style="width:100%; padding:0.55rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; border-top:1px solid var(--border-color); padding-top:1rem;">
+              <div style="color:var(--text-muted); font-size:0.8rem; line-height:1.5;">
+                <div id="devolucion-disponible">Seleccione una salida para consultar cuánto puede devolverse.</div>
+                <div id="devolucion-vista-cantidad" style="font-weight:700; color:var(--primary-blue);"></div>
+              </div>
+              <button id="btn-guardar-devolucion" type="submit" class="btn-primary" style="padding:0.65rem 1.3rem;">
+                <i data-lucide="corner-down-left"></i> Reintegrar al Inventario General
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="data-section" style="margin-top:1.5rem;">
+          <h3>Historial de Devoluciones al Inventario General</h3>
+          <div style="overflow-x:auto;">
+            <table class="custom-table">
+              <thead>
+                <tr><th>Fecha</th><th>SKU / Producto</th><th>Origen</th><th>Cantidad Devuelta</th><th>Condición</th><th>Recibido por</th><th>Observación / Kardex</th></tr>
+              </thead>
+              <tbody id="returns-table-body">
+                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Aún no se han registrado devoluciones.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="data-section" style="margin-top: 1.5rem;">
           <h3>Historial de Entregas y Salidas</h3>
           <table class="custom-table">
@@ -1158,6 +1224,6 @@
 
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=1.5.0"></script>
 </body>
 </html>
