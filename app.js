@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const dispatchForm = document.getElementById('dispatch-form');
   if (dispatchForm) dispatchForm.addEventListener('submit', registrarSalidaModule);
 
+  const returnForm = document.getElementById('return-form');
+  if (returnForm) returnForm.addEventListener('submit', registrarDevolucionParcial);
+
   const obraForm = document.getElementById('obra-form');
   if (obraForm) obraForm.addEventListener('submit', registrarObra);
 
@@ -387,6 +390,8 @@ async function cargarDatos() {
   renderizarMovimientos(movimientos || []);
   cargarHistorialCompras();
   cargarHistorialSalidas();
+  cargarSalidasParaDevolucion();
+  cargarHistorialDevoluciones();
   cargarHistorialRequests();
   cargarRequestTracking();
   
@@ -455,7 +460,7 @@ function renderizarDashboard(productos, movimientos, obras, salidasRecientes) {
       const costo = m.productos?.costo_unitario || 0;
       const subtotal = m.cantidad * costo;
 
-      if (m.tipo === 'ENTRADA') totalEntradas += subtotal;
+      if (m.tipo === 'ENTRADA' && !m.salida_origen_id) totalEntradas += subtotal; // Evita contar devoluciones como nuevas compras
       if (m.tipo === 'SALIDA') totalSalidas += subtotal;
     }
   });
@@ -1203,6 +1208,221 @@ async function cargarHistorialSalidas() {
       <td><span style="font-size:0.8rem; color:var(--text-muted);">${s.updated_by || 'Sistema'}</span></td>
     </tr>
   `).join('');
+}
+
+
+// ==========================================
+// 6A. DEVOLUCIONES PARCIALES AL INVENTARIO GENERAL
+// Cada devolución se relaciona con una salida anterior.
+// El RPC en PostgreSQL actualiza stock y Kardex de modo atómico.
+// ==========================================
+let devolucionOperacionPendiente = null;
+let devolucionOrigenActual = null;
+let devolucionMaximaActual = null;
+
+function reiniciarOperacionDevolucion() {
+  devolucionOperacionPendiente = null;
+}
+
+// Admite 0.5, 0,5, 1/2, 1/4, 3/4, 1 1/2. Máximo 3 decimales.
+function convertirCantidadDevolucion(valor) {
+  const texto = String(valor ?? '').trim().replace(',', '.');
+  let numero;
+  const mixto = texto.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  const fraccion = texto.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (mixto) {
+    if (Number(mixto[3]) === 0) return NaN;
+    numero = Number(mixto[1]) + Number(mixto[2]) / Number(mixto[3]);
+  } else if (fraccion) {
+    if (Number(fraccion[2]) === 0) return NaN;
+    numero = Number(fraccion[1]) / Number(fraccion[2]);
+  } else if (/^\d+(?:\.\d+)?$/.test(texto)) {
+    numero = Number(texto);
+  } else {
+    return NaN;
+  }
+  if (!Number.isFinite(numero) || numero <= 0 || numero > 1000000 ||
+      Math.abs(numero * 1000 - Math.round(numero * 1000)) > 1e-7) return NaN;
+  return Math.round(numero * 1000) / 1000;
+}
+
+function establecerFraccionDevolucion(valor) {
+  const el = document.getElementById('devolucion-cantidad');
+  if (el) el.value = valor;
+  reiniciarOperacionDevolucion();
+  mostrarVistaCantidadDevolucion();
+}
+
+function mostrarVistaCantidadDevolucion() {
+  const v = document.getElementById('devolucion-vista-cantidad');
+  if (!v) return;
+  const valor = document.getElementById('devolucion-cantidad')?.value;
+  if (!valor) { v.textContent = ''; return; }
+  const cantidad = convertirCantidadDevolucion(valor);
+  if (!Number.isFinite(cantidad)) {
+    v.textContent = 'Ingrese una cantidad positiva con máximo 3 decimales.';
+    v.style.color = 'var(--danger)';
+    return;
+  }
+  const unidad = devolucionOrigenActual?.productos?.unidad_medida || 'un.';
+  v.style.color = 'var(--primary-blue)';
+  v.textContent = `${valor} = ${cantidad.toLocaleString('en-US', {maximumFractionDigits:3})} ${unidad}`;
+}
+
+async function cargarSalidasParaDevolucion() {
+  const sel = document.getElementById('devolucion-salida');
+  if (!sel) return;
+  const seleccionado = sel.value;
+  const {data, error} = await _supabase.from('salidas')
+    .select('id,fecha,cantidad,obra_destino,solicitante,producto_id,productos(sku,nombre,unidad_medida)')
+    .order('fecha', {ascending: false}).limit(500);
+  if (error) {
+    sel.innerHTML = '<option value="">No se pudieron cargar las salidas</option>';
+    console.error('Error consultando salidas para devoluciones:', error);
+    return;
+  }
+  sel.innerHTML = '<option value="">Seleccione una entrega anterior</option>' +
+    (data || []).map(s => {
+      const fecha = s.fecha ? new Date(s.fecha).toLocaleDateString('es-NI') : '';
+      const nombre = s.productos?.nombre || 'Material';
+      const sku = s.productos?.sku || '';
+      const um = s.productos?.unidad_medida || 'un.';
+      const label = `${fecha} · ${sku} ${nombre} · ${s.cantidad} ${um} · ${s.obra_destino || 'Sin obra'}`;
+      return `<option value="${s.id}">${escaparHTMLCompra(label)}</option>`;
+    }).join('');
+  if (seleccionado && (data || []).some(s => s.id === seleccionado)) {
+    sel.value = seleccionado;
+    actualizarDisponibilidadDevolucion();
+  } else {
+    devolucionOrigenActual = null;
+    devolucionMaximaActual = null;
+    const info = document.getElementById('devolucion-disponible');
+    if (info) info.textContent = 'Seleccione una salida para consultar cuánto puede devolverse.';
+  }
+}
+
+async function actualizarDisponibilidadDevolucion() {
+  const salidaId = document.getElementById('devolucion-salida')?.value;
+  const info = document.getElementById('devolucion-disponible');
+  devolucionOrigenActual = null;
+  devolucionMaximaActual = null;
+  if (!salidaId) {
+    if (info) info.textContent = 'Seleccione una salida para consultar cuánto puede devolverse.';
+    mostrarVistaCantidadDevolucion();
+    return;
+  }
+  if (info) info.textContent = 'Consultando la cantidad aún disponible para devolución…';
+  const [resultadoSalida, resultadoDev] = await Promise.all([
+    _supabase.from('salidas')
+      .select('id,producto_id,fecha,cantidad,obra_destino,productos(nombre,sku,unidad_medida)')
+      .eq('id', salidaId).single(),
+    _supabase.from('movimientos').select('cantidad')
+      .eq('salida_origen_id', salidaId).eq('tipo','ENTRADA')
+  ]);
+  if (document.getElementById('devolucion-salida')?.value !== salidaId) return;
+  if (resultadoSalida.error || resultadoDev.error) {
+    if (info) info.textContent = 'No fue posible consultar la disponibilidad. Verifique la migración SQL.';
+    console.error('Consulta de devoluciones:', resultadoSalida.error || resultadoDev.error);
+    return;
+  }
+  const salida = resultadoSalida.data;
+  const devuelto = (resultadoDev.data || []).reduce((n, m) => n + Number(m.cantidad || 0), 0);
+  const disponible = Math.max(0, Math.round((Number(salida.cantidad) - devuelto) * 1000) / 1000);
+  devolucionOrigenActual = salida;
+  devolucionMaximaActual = disponible;
+  const um = salida.productos?.unidad_medida || 'un.';
+  if (info) info.textContent = `Salida: ${salida.cantidad} ${um} · Devuelto: ${devuelto} ${um} · Disponible por devolver: ${disponible} ${um}`;
+  mostrarVistaCantidadDevolucion();
+}
+
+async function registrarDevolucionParcial(e) {
+  e.preventDefault();
+  const sel = document.getElementById('devolucion-salida');
+  const cantidad = convertirCantidadDevolucion(document.getElementById('devolucion-cantidad')?.value);
+  const estado = document.getElementById('devolucion-estado')?.value;
+  const observaciones = document.getElementById('devolucion-notas')?.value.trim() || '';
+  const salidaId = sel?.value;
+  if (!usuarioActual) return alert('Inicie sesión para registrar una devolución.');
+  if (!salidaId || !devolucionOrigenActual || devolucionOrigenActual.id !== salidaId) {
+    return alert('Seleccione una entrega válida y espere a que se consulte la disponibilidad.');
+  }
+  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+    return alert('Cantidad inválida. Utilice, por ejemplo, 0.5 o 1/2 (máximo 3 decimales).');
+  }
+  if (devolucionMaximaActual === null || cantidad > devolucionMaximaActual + 1e-9) {
+    return alert('La devolución supera la cantidad pendiente de retornar en esta entrega.');
+  }
+  if (!['BUENO','PARCIAL_APROVECHABLE'].includes(estado)) {
+    return alert('Seleccione la condición del material.');
+  }
+  const um = devolucionOrigenActual.productos?.unidad_medida || 'un.';
+  const nombre = devolucionOrigenActual.productos?.nombre || 'material';
+  if (!confirm(`¿Reintegrar ${cantidad} ${um} de ${nombre} al inventario general?\nLa operación quedará registrada en Kardex.`)) return;
+  const boton = document.getElementById('btn-guardar-devolucion');
+  if (boton?.disabled) return;
+  if (boton) boton.disabled = true;
+  if (!devolucionOperacionPendiente) devolucionOperacionPendiente = crypto.randomUUID();
+  try {
+    const {data, error} = await _supabase.rpc('registrar_devolucion_parcial', {
+      p_salida_id: salidaId,
+      p_cantidad: cantidad,
+      p_estado: estado,
+      p_observaciones: observaciones,
+      p_registrado_por: usuarioActual.nombre || 'Sistema',
+      p_operacion_id: devolucionOperacionPendiente
+    });
+    if (error) {
+      alert('No se confirmó la devolución: ' + error.message + '\nSi la conexión falló, consulte el historial antes de registrar otra operación.');
+      await actualizarDisponibilidadDevolucion();
+      return;
+    }
+    const mensaje = `Devolución registrada: +${cantidad} ${um} al inventario general. Stock actual: ${Number(data?.stock_actual ?? 0).toLocaleString('en-US', {maximumFractionDigits:3})} ${um}.`;
+    reiniciarOperacionDevolucion();
+    document.getElementById('return-form').reset();
+    devolucionOrigenActual = null;
+    devolucionMaximaActual = null;
+    await cargarDatos();
+    alert(mensaje);
+  } catch (err) {
+    console.error('Error de devolución:',err);
+    alert('No fue posible verificar el resultado. Revise el historial antes de intentar otra vez.');
+  } finally {
+    if (boton) boton.disabled = false;
+  }
+}
+
+async function cargarHistorialDevoluciones() {
+  const tbody = document.getElementById('returns-table-body');
+  if (!tbody) return;
+  const {data,error} = await _supabase.from('movimientos')
+    .select('id,fecha,cantidad,concepto,updated_by,estado_devolucion,salida_origen_id,productos(sku,nombre,unidad_medida)')
+    .not('salida_origen_id','is',null).eq('tipo','ENTRADA')
+    .order('fecha',{ascending:false}).limit(100);
+  if (error) {
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;">No se pudo cargar el historial. Revise la migración SQL.</td></tr>';
+    console.error('Error leyendo devoluciones:', error);
+    return;
+  }
+  if (!data?.length) {
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;">Todavía no hay devoluciones registradas.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(m => {
+    const txt = String(m.concepto || '');
+    const origen = txt.match(/Origen: (.*?) \| Condición:/)?.[1] || 'Ver Kardex';
+    const estado = m.estado_devolucion === 'PARCIAL_APROVECHABLE' ? 'Parcial aprovechable' : 'Utilizable';
+    const producto = `${m.productos?.sku || ''} · ${m.productos?.nombre || 'Material'}`;
+    const um = m.productos?.unidad_medida || 'un.';
+    return `<tr>
+      <td>${m.fecha ? new Date(m.fecha).toLocaleString('es-NI') : '—'}</td>
+      <td>${escaparHTMLCompra(producto)}</td>
+      <td>${escaparHTMLCompra(origen)}</td>
+      <td style="font-weight:700;color:#16a34a;">+${Number(m.cantidad).toLocaleString('en-US',{maximumFractionDigits:3})} ${escaparHTMLCompra(um)}</td>
+      <td>${escaparHTMLCompra(estado)}</td>
+      <td>${escaparHTMLCompra(m.updated_by || 'Sistema')}</td>
+      <td style="font-size:0.8rem;">${escaparHTMLCompra(txt)}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ==========================================
