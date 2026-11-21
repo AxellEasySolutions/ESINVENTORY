@@ -2431,7 +2431,8 @@ function switchTab(tabId) {
   const targetTab = document.getElementById(`tab-${tabId}`);
   if (targetTab) targetTab.classList.add('active');
 
-  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  if (tabId === 'tools') toolAssets.refresh();
+  if (window.event && window.event.currentTarget) event.currentTarget.classList.add('active');
 }
 
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
@@ -2440,3 +2441,135 @@ function closeModal() {
   productoEditandoId = null;
   document.getElementById('product-form').reset();
 }
+
+// Tool custody is stored independently of consumable material stock.
+const toolAssets = (() => {
+  const section = document.getElementById('tab-tools');
+  const receive = document.getElementById('tools-receive');
+  const assign = document.getElementById('tools-assign');
+  const status = document.getElementById('tools-status');
+  const refreshButton = document.getElementById('tools-refresh');
+  let busy = false;
+  let ready = false;
+  let inventory = [];
+  let pending = null;
+
+  function limitAssignment() {
+    const selected = inventory.find(item => item.tool === assign.elements.tool.value);
+    assign.elements.quantity.max = Math.min(selected?.shop || 0, 2147483647);
+  }
+
+  function updateControls() {
+    section.querySelectorAll('input, select, button').forEach(control => {
+      control.disabled = busy || !ready;
+    });
+    refreshButton.disabled = busy;
+    assign.querySelector('button').disabled = busy || !ready || !assign.elements.tool.value;
+  }
+
+  function fillTable(id, rows, emptyText, columnCount) {
+    const body = document.getElementById(id);
+    body.replaceChildren();
+    if (!rows.length) {
+      const cell = body.insertRow().insertCell();
+      cell.colSpan = columnCount;
+      cell.textContent = emptyText;
+    }
+    for (const values of rows) {
+      const row = body.insertRow();
+      for (const value of values) {
+        const cell = row.insertCell();
+        if (value instanceof Node) cell.append(value);
+        else cell.textContent = value;
+      }
+    }
+  }
+
+  function returnForm(item) {
+    const form = document.createElement('form');
+    const quantity = document.createElement('input');
+    quantity.type = 'number';
+    quantity.min = quantity.step = quantity.value = '1';
+    quantity.max = Math.min(item.quantity, 2147483647);
+    quantity.required = true;
+    quantity.setAttribute('aria-label', 'Units of ' + item.tool + ' returned by ' + item.person);
+    const button = document.createElement('button');
+    button.className = 'btn-primary';
+    button.textContent = 'Return';
+    form.append(quantity, button);
+    form.onsubmit = event => {
+      event.preventDefault();
+      submit('return', item.tool, item.person, quantity.valueAsNumber);
+    };
+    return form;
+  }
+
+  function render(data) {
+    inventory = data.inventory;
+    const selection = assign.elements.tool.value;
+    const available = inventory.filter(item => item.shop > 0);
+    assign.elements.tool.replaceChildren(new Option('Select a tool', ''),
+      ...available.map(item => new Option(item.tool + ' (' + item.shop + ' in shop)', item.tool)));
+    if (available.some(item => item.tool === selection)) assign.elements.tool.value = selection;
+    document.getElementById('tools-names').replaceChildren(...inventory.map(item => new Option(item.tool, item.tool)));
+    const people = [...new Set(data.assignments.map(item => item.person))];
+    document.getElementById('tools-people').replaceChildren(...people.map(person => new Option(person, person)));
+    limitAssignment();
+    fillTable('tools-inventory', inventory.map(i => [i.tool, i.total, i.shop, i.assigned]), 'No tools recorded yet.', 4);
+    fillTable('tools-held', data.assignments.map(i => [i.person, i.tool, i.quantity, returnForm(i)]), 'All tools are in the shop.', 4);
+  }
+
+  async function request(params, successMessage, form) {
+    if (busy || !usuarioActual) return;
+    busy = true;
+    updateControls();
+    status.textContent = params.p_action ? 'Saving…' : 'Loading…';
+    try {
+      const {data, error} = await _supabase.rpc('tool_assets', {
+        p_email: usuarioActual.email, p_password: usuarioActual.password, ...params
+      });
+      if (error) throw error;
+      if (form) form.reset();
+      render(data);
+      ready = true;
+      if (params.p_action) pending = null;
+      status.textContent = successMessage;
+    } catch (error) {
+      status.textContent = error.code === 'PGRST202'
+        ? 'Tool inventory setup is required. Run herramientas.sql in Supabase, then refresh.'
+        : (error.message || 'Could not reach the inventory database.');
+      if (!params.p_action) ready = false;
+    } finally {
+      busy = false;
+      updateControls();
+    }
+  }
+
+  function submit(action, tool, person, quantity, form) {
+    tool = tool.trim();
+    person = person.trim();
+    if (!tool || (action !== 'receive' && !person)) {
+      status.textContent = 'Enter the required names.';
+      return;
+    }
+    const signature = JSON.stringify([usuarioActual.email, action, tool, person, quantity]);
+    if (pending?.signature !== signature) pending = {signature, id: crypto.randomUUID()};
+    const messages = {receive: 'Tools added to shop.', assign: 'Tools assigned.', return: 'Tools returned to shop.'};
+    return request({p_action: action, p_tool: tool, p_person: person, p_quantity: quantity,
+      p_operation: pending.id}, messages[action], form);
+  }
+
+  receive.onsubmit = event => {
+    event.preventDefault();
+    submit('receive', receive.elements.tool.value, '', receive.elements.quantity.valueAsNumber, receive);
+  };
+  assign.onsubmit = event => {
+    event.preventDefault();
+    submit('assign', assign.elements.tool.value, assign.elements.person.value, assign.elements.quantity.valueAsNumber, assign);
+  };
+  assign.elements.tool.onchange = () => { limitAssignment(); updateControls(); };
+  const refresh = () => request({}, '');
+  refreshButton.onclick = refresh;
+  updateControls();
+  return {refresh};
+})();
