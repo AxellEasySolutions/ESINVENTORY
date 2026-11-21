@@ -2485,6 +2485,28 @@ const toolAssets = (() => {
     }
   }
 
+  const assignmentDate = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    timeZoneName: 'short'
+  });
+
+  function assignmentTimes(item) {
+    if (!item.issues?.length) return 'Update herramientas.sql to display assignment times.';
+    const dates = document.createElement('div');
+    for (const issue of item.issues) {
+      const line = document.createElement('div');
+      const time = document.createElement('time');
+      time.dateTime = issue.at;
+      time.textContent = assignmentDate.format(new Date(issue.at));
+      line.append(time);
+      if (item.issues.length > 1) {
+        line.append(' (' + issue.units + (issue.units === 1 ? ' unit)' : ' units)'));
+      }
+      dates.append(line);
+    }
+    return dates;
+  }
+
   function returnForm(item) {
     const form = document.createElement('form');
     const quantity = document.createElement('input');
@@ -2516,7 +2538,7 @@ const toolAssets = (() => {
     document.getElementById('tools-people').replaceChildren(...people.map(person => new Option(person, person)));
     limitAssignment();
     fillTable('tools-inventory', inventory.map(i => [i.tool, i.total, i.shop, i.assigned]), 'No tools recorded yet.', 4);
-    fillTable('tools-held', data.assignments.map(i => [i.person, i.tool, i.quantity, returnForm(i)]), 'All tools are in the shop.', 4);
+    fillTable('tools-held', data.assignments.map(i => [i.person, i.tool, i.quantity, assignmentTimes(i), returnForm(i)]), 'All tools are in the shop.', 5);
   }
 
   async function request(params, successMessage, form) {
@@ -2573,3 +2595,4 @@ const toolAssets = (() => {
   updateControls();
   return {refresh};
 })();
+
