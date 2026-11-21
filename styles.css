@@ -1149,3 +1149,14 @@ body {
     min-height: 115px;
   }
 }
+
+#tab-tools .tools-forms { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,250px),1fr)); gap: 1rem; }
+#tab-tools .card { padding: 1rem; margin: 1rem 0; }
+#tab-tools .tools-forms form, #tab-tools label { display: grid; gap: .45rem; align-content: start; }
+#tab-tools label { margin: .4rem 0; font-weight: 600; }
+#tab-tools input, #tab-tools select { min-width: 0; padding: .55rem; border: 1px solid var(--border-color); border-radius: 6px; }
+#tab-tools .tools-table { overflow-x: auto; }
+#tab-tools .tools-table table { width: 100%; margin-top: .75rem; }
+#tab-tools .tools-table form { display: flex; gap: .5rem; }
+#tab-tools .tools-table input { width: 5rem; }
+#tools-status { margin-top: .6rem; }
