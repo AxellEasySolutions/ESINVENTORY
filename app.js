@@ -1,4 +1,4 @@
-// CONFIGURACIÓN DE SUPABASE 2
+// CONFIGURACIÓN DE SUPABASE 1
 const SUPABASE_URL = 'https://yuppkdlmjgneyzpuwupq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cHBrZGxtamduZXl6cHV3dXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NTgyNzYsImV4cCI6MjEwNDQzNDI3Nn0.oJY0jks32BYBttOm5FYgBhAn-cIw5F6qDaXFh10No78';
 
@@ -145,6 +145,7 @@ async function iniciarSesion(e) {
 function cerrarSesion() {
   localStorage.removeItem('sesion_usuario');
   usuarioActual = null;
+  toolAssets.clear();
   document.body.classList.remove('accounting-access');
   comprasContabilidad = [];
   document.getElementById('purchases-table-body').replaceChildren();
@@ -2511,7 +2512,7 @@ const toolAssets = (() => {
 
   function updateControls() {
     section.querySelectorAll('input, select, button').forEach(control => {
-      control.disabled = busy || !ready;
+      control.disabled = busy || !ready || control.dataset.assigned === 'true';
     });
     refreshButtons.forEach(button => {
       button.disabled = busy;
@@ -2579,6 +2580,61 @@ const toolAssets = (() => {
     return form;
   }
 
+  function deleteButton(item) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tool-delete';
+    button.textContent = 'Delete';
+    button.dataset.assigned = String(item.assigned > 0);
+    button.title = item.assigned > 0 ? 'Return all assigned units first.' : 'Delete ' + item.tool;
+    button.setAttribute('aria-label', 'Delete ' + item.tool);
+    button.onclick = () => {
+      if (!confirm('Delete “' + item.tool + '” from inventory? All ' + item.total + ' units will be removed.')) return;
+      const signature = JSON.stringify([usuarioActual.email, 'delete', item.tool, item.total]);
+      if (pending?.signature !== signature) pending = {signature, id: crypto.randomUUID()};
+      request({p_tool: item.tool, p_expected_total: item.total, p_operation: pending.id},
+        'Tool deleted.', null, 'retire_inventory_tool');
+    };
+    return button;
+  }
+
+  function accountingCell(item) {
+    const details = document.createElement('details');
+    details.className = 'tool-accounting';
+    const summary = document.createElement('summary');
+    const amount = item.price == null ? 'Set price' : Number(item.price).toLocaleString('en-US', {style:'currency', currency:'USD'});
+    summary.textContent = amount;
+    summary.setAttribute('aria-label', 'Edit material code and unit price for ' + item.tool + ': ' + amount);
+    const form = document.createElement('form');
+    const codeLabel = document.createElement('label');
+    codeLabel.textContent = 'Material code';
+    const code = document.createElement('input');
+    code.required = true;
+    code.maxLength = 64;
+    code.value = item.code;
+    codeLabel.append(code);
+    const priceLabel = document.createElement('label');
+    priceLabel.textContent = 'Unit price (USD)';
+    const price = document.createElement('input');
+    price.type = 'number';
+    price.min = '0';
+    price.max = '999999999999.99';
+    price.step = '0.01';
+    price.value = item.price ?? '';
+    priceLabel.append(price);
+    const save = document.createElement('button');
+    save.className = 'btn-primary';
+    save.textContent = 'Save';
+    form.append(codeLabel, priceLabel, save);
+    form.onsubmit = event => {
+      event.preventDefault();
+      request({p_tool:item.tool, p_code:code.value.trim(), p_price:price.value || null, p_revision:item.revision},
+        'Tool details saved.', null, 'set_tool_accounting');
+    };
+    details.append(summary, form);
+    return details;
+  }
+
   function render(data) {
     inventory = data.inventory;
     const selection = assign.elements.tool.value;
@@ -2590,33 +2646,45 @@ const toolAssets = (() => {
     const people = [...new Set(data.assignments.map(item => item.person))];
     document.getElementById('tools-people').replaceChildren(...people.map(person => new Option(person, person)));
     limitAssignment();
-    fillTable('tools-inventory', inventory.map(i => [i.tool, i.total, i.shop, i.assigned]), 'No tools recorded yet.', 4);
+    const canDelete = data.can_delete === true;
+    document.getElementById('tools-actions').hidden = !canDelete;
+    const canPrice = data.can_price === true;
+    document.getElementById('tools-price').hidden = !canPrice;
+    const inventoryRows = inventory.map(item => {
+      const row = [item.code || '—', item.tool, item.total, item.shop, item.assigned];
+      if (canPrice) row.push(accountingCell(item));
+      if (canDelete) row.push(deleteButton(item));
+      return row;
+    });
+    fillTable('tools-inventory', inventoryRows, 'No tools recorded yet.', 5 + Number(canDelete) + Number(canPrice));
     fillTable('tools-held', data.assignments.map(i => [i.person, i.tool, i.quantity, assignmentTimes(i), returnForm(i)]), 'All tools are in the shop.', 5);
   }
 
-  async function request(params, successMessage, form) {
+  async function request(params, successMessage, form, rpcName = 'tool_assets') {
     if (busy || !usuarioActual) return;
+    const owner = usuarioActual;
     busy = true;
     updateControls();
-    status.textContent = params.p_action ? 'Saving…' : 'Loading…';
+    status.textContent = successMessage ? 'Saving…' : 'Loading…';
     try {
-      const {data, error} = await _supabase.rpc('tool_assets', {
+      const {data, error} = await _supabase.rpc(rpcName, {
         p_email: usuarioActual.email, p_password: usuarioActual.password, ...params
       });
+      if (owner !== usuarioActual) return;
       if (error) throw error;
       if (form) form.reset();
       render(data);
       ready = true;
-      if (params.p_action) pending = null;
+      if (params.p_operation) pending = null;
       status.textContent = successMessage;
     } catch (error) {
+      if (owner !== usuarioActual) return;
       status.textContent = error.code === 'PGRST202'
         ? 'Tool inventory setup is required. Run herramientas.sql in Supabase, then refresh.'
         : (error.message || 'Could not reach the inventory database.');
-      if (!params.p_action) ready = false;
+      if (!successMessage) ready = false;
     } finally {
-      busy = false;
-      updateControls();
+      if (owner === usuarioActual) { busy = false; updateControls(); }
     }
   }
 
@@ -2646,7 +2714,14 @@ const toolAssets = (() => {
   const refresh = () => request({}, '');
   refreshButtons.forEach(button => { button.onclick = refresh; });
   updateControls();
-  return {refresh};
+  function clear() {
+    busy = ready = false;
+    pending = null;
+    render({inventory: [], assignments: []});
+    status.textContent = '';
+    updateControls();
+  }
+  return {refresh, clear};
 })();
 
 async function refreshInventoryArea(area) {
