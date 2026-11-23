@@ -698,6 +698,14 @@ async function eliminarProducto(id) {
 // ==========================================
 // POBLAR SELECTS (DESPLEGABLES DINÁMICOS Y FILTRADOS)
 // ==========================================
+function replaceInventoryOptions(select, options) {
+  const previous = select.value;
+  select.innerHTML = options;
+  if (previous && Array.from(select.options).some(option => option.value === previous)) {
+    select.value = previous;
+  }
+}
+
 function poblarSelectProductos(productos) {
   const selectMov = document.getElementById('mov-producto');
   const selectCompra = document.getElementById('compra-producto');
@@ -714,11 +722,11 @@ function poblarSelectProductos(productos) {
   const optionsSoloDisponibles = '<option value="">Seleccione Producto</option>' + 
     prodDisponibles.map(p => `<option value="${p.id}" data-sku="${p.sku}" data-nombre="${p.nombre}" data-cat="${p.categoria}" data-stock="${p.stock_actual}">${p.nombre} (Available: ${p.stock_actual})</option>`).join('');
 
-  if (selectMov) selectMov.innerHTML = optionsTodas;
-  if (selectCompra) selectCompra.innerHTML = optionsTodas;
-  if (selectSalida) selectSalida.innerHTML = optionsSoloDisponibles;
-  if (selectCesta) selectCesta.innerHTML = optionsSoloDisponibles;
-  if (selectReq) selectReq.innerHTML = optionsSoloDisponibles;
+  if (selectMov) replaceInventoryOptions(selectMov, optionsTodas);
+  if (selectCompra) replaceInventoryOptions(selectCompra, optionsTodas);
+  if (selectSalida) replaceInventoryOptions(selectSalida, optionsSoloDisponibles);
+  if (selectCesta) replaceInventoryOptions(selectCesta, optionsSoloDisponibles);
+  if (selectReq) replaceInventoryOptions(selectReq, optionsSoloDisponibles);
 }
 
 function poblarSelectObras(obras) {
@@ -735,9 +743,9 @@ function poblarSelectObras(obras) {
   const options = '<option value="">Seleccione Obra</option>' + 
     obrasOrdenadas.map(o => `<option value="${o.direccion || o.nombre}">${o.direccion || o.nombre} ${o.lote && o.lote !== 'N/A' ? ' (' + o.lote + ')' : ''}</option>`).join('');
 
-  if (selectSalidaObra) selectSalidaObra.innerHTML = options;
-  if (selectCestaObra) selectCestaObra.innerHTML = options;
-  if (selectReqObra) selectReqObra.innerHTML = options;
+  if (selectSalidaObra) replaceInventoryOptions(selectSalidaObra, options);
+  if (selectCestaObra) replaceInventoryOptions(selectCestaObra, options);
+  if (selectReqObra) replaceInventoryOptions(selectReqObra, options);
 }
 
 function poblarSelectContratistas(contratistas) {
@@ -753,9 +761,9 @@ function poblarSelectContratistas(contratistas) {
       return `<option value="${nombreCompleto}">${nombreCompleto} ${c.phone ? ' - ' + c.phone : ''}</option>`;
     }).join('');
 
-  if (selectSalidaCnt) selectSalidaCnt.innerHTML = options;
-  if (selectCestaCnt) selectCestaCnt.innerHTML = options;
-  if (selectReqCnt) selectReqCnt.innerHTML = options;
+  if (selectSalidaCnt) replaceInventoryOptions(selectSalidaCnt, options);
+  if (selectCestaCnt) replaceInventoryOptions(selectCestaCnt, options);
+  if (selectReqCnt) replaceInventoryOptions(selectReqCnt, options);
 }
 
 function poblarSelectProveedores(proveedores) {
@@ -767,7 +775,7 @@ function poblarSelectProveedores(proveedores) {
   if (selectCompraProv.tagName === 'SELECT') {
     const options = '<option value="">Seleccione Proveedor</option>' + 
       provOrdenados.map(p => `<option value="${p.nombre_empresa}">${p.nombre_empresa}</option>`).join('');
-    selectCompraProv.innerHTML = options;
+    replaceInventoryOptions(selectCompraProv, options);
   }
 }
 
@@ -974,7 +982,7 @@ async function cargarHistorialCompras() {
   if (errorCarga) {
     console.error('Error loading purchases:', errorCarga);
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;">Unable to load purchases. Check the sales tax migration and Supabase permissions.</td></tr>';
-    return;
+    return errorCarga;
   }
   comprasContabilidad = acumuladas;
   renderizarControlTaxes();
@@ -1258,7 +1266,11 @@ async function cargarHistorialSalidas() {
     .select('*, productos(nombre)')
     .order('fecha', { ascending: false });
 
-  if (error || !salidas || salidas.length === 0) {
+  if (error) {
+    if (!tbody.rows.length) tbody.insertRow().insertCell().textContent = 'Unable to load records.';
+    return error;
+  }
+  if (!salidas || salidas.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No stock issues recorded.</td></tr>';
     return;
   }
@@ -1338,15 +1350,16 @@ function mostrarVistaCantidadDevolucion() {
 async function cargarSalidasParaDevolucion() {
   const sel = document.getElementById('devolucion-salida');
   if (!sel) return;
-  const seleccionado = sel.value;
+
   const {data, error} = await _supabase.from('salidas')
     .select('id,fecha,cantidad,obra_destino,solicitante,producto_id,productos(sku,nombre,unidad_medida)')
     .order('fecha', {ascending: false}).limit(500);
   if (error) {
     sel.innerHTML = '<option value="">Unable to load deliveries</option>';
     console.error('Error loading return-eligible deliveries:', error);
-    return;
+    return error;
   }
+  const seleccionado = sel.value;
   sel.innerHTML = '<option value="">Select a Previous Delivery</option>' +
     (data || []).map(s => {
       const fecha = s.fecha ? new Date(s.fecha).toLocaleDateString('en-US') : '';
@@ -1356,9 +1369,9 @@ async function cargarSalidasParaDevolucion() {
       const label = `${fecha} · ${sku} ${nombre} · ${s.cantidad} ${um} · ${s.obra_destino || 'No job site'}`;
       return `<option value="${s.id}">${escaparHTMLCompra(label)}</option>`;
     }).join('');
-  if (seleccionado && (data || []).some(s => s.id === seleccionado)) {
+  if (seleccionado && (data || []).some(s => String(s.id) === seleccionado)) {
     sel.value = seleccionado;
-    actualizarDisponibilidadDevolucion();
+    await actualizarDisponibilidadDevolucion();
   } else {
     devolucionOrigenActual = null;
     devolucionMaximaActual = null;
@@ -1467,7 +1480,7 @@ async function cargarHistorialDevoluciones() {
   if (error) {
     tbody.innerHTML='<tr><td colspan="7" style="text-align:center;">Unable to load return history. Check the SQL migration.</td></tr>';
     console.error('Error loading returns:', error);
-    return;
+    return error;
   }
   if (!data?.length) {
     tbody.innerHTML='<tr><td colspan="7" style="text-align:center;">No returns have been recorded yet.</td></tr>';
@@ -2030,7 +2043,11 @@ async function cargarHistorialRequests() {
     .select('*, request_items(*, productos(*))')
     .order('fecha', { ascending: false });
 
-  if (error || !requests || requests.length === 0) {
+  if (error) {
+    if (!tbody.rows.length) tbody.insertRow().insertCell().textContent = 'Unable to load records.';
+    return error;
+  }
+  if (!requests || requests.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No requests found.</td></tr>';
     return;
   }
@@ -2293,7 +2310,11 @@ async function cargarRequestTracking() {
     .eq('estado', 'Completado')
     .order('fecha_despacho', { ascending: false });
 
-  if (error || !requests || requests.length === 0) {
+  if (error) {
+    if (!tbody.rows.length) tbody.insertRow().insertCell().textContent = 'Unable to load records.';
+    return error;
+  }
+  if (!requests || requests.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No approved requests to track.</td></tr>';
     actualizarKpisTracking([]);
     return;
@@ -2448,7 +2469,7 @@ const toolAssets = (() => {
   const receive = document.getElementById('tools-receive');
   const assign = document.getElementById('tools-assign');
   const status = document.getElementById('tools-status');
-  const refreshButton = document.getElementById('tools-refresh');
+  const refreshButtons = section.querySelectorAll('[data-refresh="tools"]');
   let busy = false;
   let ready = false;
   let inventory = [];
@@ -2463,7 +2484,10 @@ const toolAssets = (() => {
     section.querySelectorAll('input, select, button').forEach(control => {
       control.disabled = busy || !ready;
     });
-    refreshButton.disabled = busy;
+    refreshButtons.forEach(button => {
+      button.disabled = busy;
+      button.textContent = busy ? 'Updating…' : 'Refresh';
+    });
     assign.querySelector('button').disabled = busy || !ready || !assign.elements.tool.value;
   }
 
@@ -2591,8 +2615,58 @@ const toolAssets = (() => {
   };
   assign.elements.tool.onchange = () => { limitAssignment(); updateControls(); };
   const refresh = () => request({}, '');
-  refreshButton.onclick = refresh;
+  refreshButtons.forEach(button => { button.onclick = refresh; });
   updateControls();
   return {refresh};
 })();
+
+async function refreshInventoryArea(area) {
+  async function rows(table, columns = '*', order) {
+    let query = _supabase.from(table).select(columns);
+    if (order) query = query.order(order, { ascending: false });
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  }
+  const movements = () => rows('movimientos', '*, productos(nombre, costo_unitario)', 'fecha');
+  const products = () => rows('productos').then(poblarSelectProductos);
+  const sites = () => rows('obras').then(poblarSelectObras);
+  const contractors = () => rows('contratistas').then(poblarSelectContratistas);
+  const sources = {
+    dashboard: [async () => renderizarDashboard(...await Promise.all([
+      rows('productos'), movements(), rows('obras'), rows('salidas', '*, productos(nombre)', 'fecha')
+    ]))],
+    inventario: [() => rows('productos').then(renderizarTablaInventario)],
+    movil: [products, sites, contractors],
+    compras: [products, () => rows('proveedores').then(poblarSelectProveedores), cargarHistorialCompras],
+    salidas: [products, sites, contractors, cargarHistorialSalidas, cargarHistorialDevoluciones, cargarSalidasParaDevolucion],
+    movimientos: [products, () => movements().then(renderizarMovimientos)],
+    obras: [() => rows('obras').then(renderizarTablaObras)],
+    contratistas: [() => rows('contratistas').then(cargarContratistas)],
+    proveedores: [() => rows('proveedores').then(renderizarTablaProveedores)],
+    vencimientos: [cargarRequestTracking],
+    etiquetas: [products, sites, contractors, cargarHistorialRequests]
+  };
+  const results = await Promise.allSettled(sources[area].map(load => load()));
+  for (const result of results) {
+    if (result.status === 'rejected') throw result.reason;
+    if (result.value?.message) throw result.value;
+  }
+}
+
+document.addEventListener('click', async event => {
+  const button = event.target.closest('button[data-refresh]');
+  if (!button || button.disabled || button.dataset.refresh === 'tools' || !usuarioActual) return;
+  const buttons = button.closest('.tab-content').querySelectorAll('[data-refresh]');
+  buttons.forEach(control => { control.disabled = true; });
+  button.textContent = 'Updating…';
+  try {
+    await refreshInventoryArea(button.dataset.refresh);
+  } catch (error) {
+    alert('Could not refresh all data. ' + (error?.message || 'Please try again.'));
+  } finally {
+    button.textContent = 'Refresh';
+    buttons.forEach(control => { control.disabled = false; });
+  }
+});
 
