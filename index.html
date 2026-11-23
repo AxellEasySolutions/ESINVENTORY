@@ -41,6 +41,11 @@
 .refresh-title { display:flex; align-items:center; gap:.5rem; }
 .refresh-bar { display:flex; align-items:center; background:var(--primary-blue); color:white; padding:.55rem 1.25rem; border-radius:8px 8px 0 0; font-size:.95rem; }
 body:not(.accounting-access) [data-accounting] { display: none !important; }
+#tab-tools .tool-delete { border:1px solid #dc2626; color:#b91c1c; background:white; border-radius:6px; padding:.35rem .7rem; cursor:pointer; font-weight:600; }
+#tab-tools .tool-delete:disabled { opacity:.45; cursor:not-allowed; }
+#tab-tools .tool-accounting form {display:grid; gap:.5rem; min-width:12rem; padding:.6rem 0;}
+#tab-tools .tool-accounting input {width:100%;}
+#tab-tools .tool-accounting summary {cursor:pointer; color:var(--primary-blue);}
 </style>
 </head>
 <body>
@@ -158,7 +163,7 @@ body:not(.accounting-access) [data-accounting] { display: none !important; }
           </div>
         </div>
         <div class="data-section"><div class="tool-heading"><h3 class="tool-panel-title"><i data-lucide="package"></i>Tool inventory</h3><button type="button" id="tools-refresh" class="no-print" data-refresh="tools">Refresh</button></div>
-          <div class="data-section-body tool-scroll"><table class="custom-table"><thead><tr><th>Tool</th><th>Total owned</th><th>In shop</th><th>Assigned</th></tr></thead><tbody id="tools-inventory"></tbody></table></div>
+          <div class="data-section-body tool-scroll"><table class="custom-table"><thead><tr><th>Material code</th><th>Tool</th><th>Total owned</th><th>In shop</th><th>Assigned</th><th id="tools-price" hidden>Unit price (USD)</th><th id="tools-actions" hidden>Actions</th></tr></thead><tbody id="tools-inventory"></tbody></table></div>
         </div>
         <div class="data-section"><h3 class="tool-panel-title refresh-title"><i data-lucide="users"></i>Active assignments<button type="button" class="section-refresh no-print" data-refresh="tools">Refresh</button></h3>
           <div class="data-section-body tool-scroll"><table class="custom-table"><thead><tr><th>Person</th><th>Tool</th><th>Units held</th><th>Assigned at</th><th>Return to shop</th></tr></thead><tbody id="tools-held"></tbody></table></div>
@@ -1293,9 +1298,8 @@ body:not(.accounting-access) [data-accounting] { display: none !important; }
 
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
-  <script src="app.js?v=accounting-access-1"></script>
+  <script src="app.js?v=tool-prices-1"></script>
 </body>
 </html>
-
 
 
