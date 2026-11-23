@@ -40,6 +40,7 @@
 .tab-content .section-refresh:disabled { opacity:.65; cursor:wait; }
 .refresh-title { display:flex; align-items:center; gap:.5rem; }
 .refresh-bar { display:flex; align-items:center; background:var(--primary-blue); color:white; padding:.55rem 1.25rem; border-radius:8px 8px 0 0; font-size:.95rem; }
+body:not(.accounting-access) [data-accounting] { display: none !important; }
 </style>
 </head>
 <body>
@@ -495,7 +496,7 @@
             </div>
 
             <!-- IMPUESTOS POR FACTURA - independientes del costo de inventario -->
-            <div class="tax-purchase-panel">
+            <div class="tax-purchase-panel" data-accounting>
               <div class="tax-panel-header">
                 <div>
                   <h4><i data-lucide="receipt-text"></i> Purchase Sales Tax</h4>
@@ -531,7 +532,7 @@
             </div>
 
             <div class="tax-purchase-footer">
-              <div class="tax-amounts">
+              <div class="tax-amounts" data-accounting>
                 <div><span>Subtotal Before Tax</span><strong id="compra-subtotal-display">$0.00</strong></div>
                 <div><span>Sales Tax</span><strong id="compra-tax-display">$0.00</strong></div>
                 <div class="tax-amounts-total"><span>Total Including Tax</span><strong id="compra-total-display">$0.00</strong></div>
@@ -542,7 +543,7 @@
         </div>
 
         <!-- CONTROL CONTABLE DE TAXES POR CICLO: MEJORA VISUAL ÚNICAMENTE -->
-        <div class="data-section tax-report-section" style="margin-top: 1.5rem;">
+        <div class="data-section tax-report-section" data-accounting style="margin-top: 1.5rem;">
           <h3 class="refresh-title">Sales Tax Accounting by Reporting Period<button type="button" class="section-refresh no-print" data-refresh="compras">Refresh</button></h3>
           <div class="data-section-body">
             <div class="tax-accounting-top">
@@ -607,7 +608,7 @@
 
             <div class="tax-accounting-legal-note">
               <i data-lucide="info" aria-hidden="true"></i>
-              <p><strong>Accounting Note:</strong> “Reported” is an internal accounting status, not proof of tax filing or payment. Only administrators can change it.</p>
+              <p><strong>Accounting Note:</strong> “Reported” is an internal accounting status, not proof of tax filing or payment. Only authorized accounting users can change it.</p>
             </div>
           </div>
         </div>
@@ -625,14 +626,14 @@
                 <th>Quantity</th>
                 <th>Unit Cost ($)</th>
                 <th>Subtotal ($)</th>
-                <th>Sales Tax</th>
-                <th>Sales Tax ($)</th>
-                <th>Total Including Tax ($)</th>
-                <th>Accounting Period</th>
-                <th>Tax Status</th>
+                <th data-accounting>Sales Tax</th>
+                <th data-accounting>Sales Tax ($)</th>
+                <th data-accounting>Total Including Tax ($)</th>
+                <th data-accounting>Accounting Period</th>
+                <th data-accounting>Tax Status</th>
                 <th>Payment Status</th>
                 <th>Recorded By</th>
-                <th>Accounting Actions</th>
+                <th data-accounting>Accounting Actions</th>
               </tr>
             </thead>
             <tbody id="purchases-table-body"></tbody>
@@ -1236,7 +1237,7 @@
   </div>
 
   <!-- MODAL: AJUSTAR TAXES DE UNA COMPRA, SIN CAMBIAR STOCK -->
-  <div id="modal-editar-tax" class="modal">
+  <div id="modal-editar-tax" data-accounting class="modal">
     <div class="modal-content tax-edit-modal">
       <h3><i data-lucide="receipt-text"></i> Edit Invoice Sales Tax</h3>
       <p class="tax-note" id="tax-edit-factura-label">Select a purchase to edit its sales tax.</p>
@@ -1292,7 +1293,9 @@
 
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
-  <script src="app.js?v=section-refresh-1"></script>
+  <script src="app.js?v=accounting-access-1"></script>
 </body>
 </html>
+
+
 
