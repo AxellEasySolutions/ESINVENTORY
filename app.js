@@ -2512,7 +2512,7 @@ const toolAssets = (() => {
 
   function updateControls() {
     section.querySelectorAll('input, select, button').forEach(control => {
-      control.disabled = busy || !ready || control.dataset.assigned === 'true';
+      control.disabled = busy || !ready || control.dataset.noShopStock === 'true';
     });
     refreshButtons.forEach(button => {
       button.disabled = busy;
@@ -2580,22 +2580,34 @@ const toolAssets = (() => {
     return form;
   }
 
-  function deleteButton(item) {
+  function retirementForm(item) {
+    const form = document.createElement('form');
+    const quantity = document.createElement('input');
+    quantity.type = 'number';
+    quantity.min = quantity.step = '1';
+    quantity.max = String(item.shop);
+    quantity.value = item.shop > 0 ? '1' : '';
+    quantity.required = true;
+    quantity.setAttribute('aria-label', 'Shop units to remove for ' + item.tool);
     const button = document.createElement('button');
-    button.type = 'button';
+    button.type = 'submit';
     button.className = 'tool-delete';
     button.textContent = 'Delete';
-    button.dataset.assigned = String(item.assigned > 0);
-    button.title = item.assigned > 0 ? 'Return all assigned units first.' : 'Delete ' + item.tool;
-    button.setAttribute('aria-label', 'Delete ' + item.tool);
-    button.onclick = () => {
-      if (!confirm('Delete “' + item.tool + '” from inventory? All ' + item.total + ' units will be removed.')) return;
-      const signature = JSON.stringify([usuarioActual.email, 'delete', item.tool, item.total]);
+    button.title = item.shop > 0 ? 'Remove units from shop stock' : 'No units available in the shop';
+    button.setAttribute('aria-label', 'Remove available units of ' + item.tool);
+    quantity.dataset.noShopStock = button.dataset.noShopStock = String(item.shop <= 0);
+    form.append(quantity, button);
+    form.onsubmit = event => {
+      event.preventDefault();
+      const units = quantity.valueAsNumber;
+      if (!Number.isSafeInteger(units) || units < 1 || units > item.shop) return;
+      if (!confirm('Remove ' + units + ' shop unit(s) of “' + item.tool + '”?')) return;
+      const signature = JSON.stringify([usuarioActual.email, 'retire', item.tool, item.total, units]);
       if (pending?.signature !== signature) pending = {signature, id: crypto.randomUUID()};
-      request({p_tool: item.tool, p_expected_total: item.total, p_operation: pending.id},
-        'Tool deleted.', null, 'retire_inventory_tool');
+      request({p_tool: item.tool, p_expected_total: item.total, p_quantity: units, p_operation: pending.id},
+        'Shop stock updated.', null, 'retire_shop_units');
     };
-    return button;
+    return form;
   }
 
   function accountingCell(item) {
@@ -2677,7 +2689,7 @@ const toolAssets = (() => {
     const inventoryRows = inventory.map(item => {
       const row = [item.code || '—', item.tool, item.total, item.shop, item.assigned];
       if (canPrice) row.push(accountingCell(item));
-      if (canDelete) row.push(deleteButton(item));
+      if (canDelete) row.push(retirementForm(item));
       return row;
     });
     fillTable('tools-inventory', inventoryRows, 'No tools recorded yet.', 5 + Number(canDelete) + Number(canPrice));
