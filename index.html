@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 <style>
+.sidebar .nav-btn > svg { flex: 0 0 20px; width: 20px; height: 20px; }
 #tab-tools .data-section { margin-bottom: 1.5rem; min-width: 0; }
 #tab-tools .tool-panel-title { display: flex; gap: .55rem; align-items: center; margin: 0; }
 #tab-tools .tool-panel-title svg { width: 17px; height: 17px; }
@@ -34,6 +35,11 @@
 @media (max-width: 600px) {
   #tab-tools .tool-row, #tab-tools #tools-assign .tool-row { grid-template-columns: minmax(0,1fr); }
 }
+
+.tab-content .section-refresh { margin-left:auto; flex:none; padding:.35rem .75rem; border:1px solid currentColor; border-radius:6px; color:inherit; background:transparent; font-weight:600; font-family:inherit; font-size:.78rem; cursor:pointer; }
+.tab-content .section-refresh:disabled { opacity:.65; cursor:wait; }
+.refresh-title { display:flex; align-items:center; gap:.5rem; }
+.refresh-bar { display:flex; align-items:center; background:var(--primary-blue); color:white; padding:.55rem 1.25rem; border-radius:8px 8px 0 0; font-size:.95rem; }
 </style>
 </head>
 <body>
@@ -109,8 +115,8 @@
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('inventario')"><i data-lucide="package"></i> Materials / Products</button>
         <button class="nav-btn" data-role="ALL" onclick="switchTab('tools')"><i data-lucide="wrench"></i> Tool Assets</button>
         <button class="nav-btn" data-role="ALL" onclick="switchTab('movil')"><i data-lucide="shopping-bag"></i> Delivery Cart</button>
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('compras')"><i data-lucide="shopping-cart"></i> Stock Receipts</button>
-        <button class="nav-btn" data-role="ALL" onclick="switchTab('salidas')"><i data-lucide="truck"></i> Stock Issues </button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('compras')"><i data-lucide="shopping-cart"></i> Purchases</button>
+        <button class="nav-btn" data-role="ALL" onclick="switchTab('salidas')"><i data-lucide="truck"></i> Deliveries</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('obras')"><i data-lucide="folder-kanban"></i> Projects / Job Sites</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('contratistas')"><i data-lucide="users"></i> Contractors</button>
         <button class="nav-btn" data-role="ADMIN" onclick="switchTab('proveedores')"><i data-lucide="building-2"></i> Suppliers</button>
@@ -128,7 +134,7 @@
     <main class="main">
 
       <section id="tab-tools" class="tab-content">
-        <div class="data-section tool-entry"><h3 class="tool-panel-title"><i data-lucide="wrench"></i>Tool Assets</h3>
+        <div class="data-section tool-entry"><h3 class="tool-panel-title refresh-title"><i data-lucide="wrench"></i>Tool Assets<button type="button" class="section-refresh no-print" data-refresh="tools">Refresh</button></h3>
           <div class="data-section-body">
           <form id="tools-receive"><h4>Receive tools</h4>
             <div class="tool-row">
@@ -150,10 +156,10 @@
             <p id="tools-status" role="status" aria-live="polite"></p>
           </div>
         </div>
-        <div class="data-section"><div class="tool-heading"><h3 class="tool-panel-title"><i data-lucide="package"></i>Tool inventory</h3><button type="button" id="tools-refresh">Refresh</button></div>
+        <div class="data-section"><div class="tool-heading"><h3 class="tool-panel-title"><i data-lucide="package"></i>Tool inventory</h3><button type="button" id="tools-refresh" class="no-print" data-refresh="tools">Refresh</button></div>
           <div class="data-section-body tool-scroll"><table class="custom-table"><thead><tr><th>Tool</th><th>Total owned</th><th>In shop</th><th>Assigned</th></tr></thead><tbody id="tools-inventory"></tbody></table></div>
         </div>
-        <div class="data-section"><h3 class="tool-panel-title"><i data-lucide="users"></i>Active assignments</h3>
+        <div class="data-section"><h3 class="tool-panel-title refresh-title"><i data-lucide="users"></i>Active assignments<button type="button" class="section-refresh no-print" data-refresh="tools">Refresh</button></h3>
           <div class="data-section-body tool-scroll"><table class="custom-table"><thead><tr><th>Person</th><th>Tool</th><th>Units held</th><th>Assigned at</th><th>Return to shop</th></tr></thead><tbody id="tools-held"></tbody></table></div>
         </div>
       </section>
@@ -164,7 +170,7 @@
             <span class="sub-tag">INVENTORY CONTROL</span>
             <h2>Construction Inventory</h2>
             <p>Stock levels, valuation, receipts, deliveries, and job-site usage.</p>
-          </div>
+          </div><button type="button" class="section-refresh no-print" data-refresh="dashboard">Refresh</button>
           <div class="live-status">
             <span class="status-dot"></span>
             <div>
@@ -302,6 +308,7 @@
       </section>
 
       <section id="tab-inventario" class="tab-content">
+        <div class="refresh-bar"><strong>Materials</strong><button type="button" class="section-refresh no-print" data-refresh="inventario">Refresh</button></div>
         <table class="custom-table">
           <thead>
             <tr>
@@ -322,7 +329,7 @@
       <!-- CESTA DE ENTREGA CON N.º DE ORDEN Y N.º DASH -->
       <section id="tab-movil" class="tab-content">
         <div class="form-card no-print">
-          <h3>Generate Materials Delivery Note</h3>
+          <h3 class="refresh-title">Generate Materials Delivery Note<button type="button" class="section-refresh no-print" data-refresh="movil">Refresh</button></h3>
           <div class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
@@ -432,7 +439,7 @@
       <!-- ENTRADAS / COMPRAS -->
       <section id="tab-compras" class="tab-content">
         <div class="form-card">
-          <h3>Record Materials Purchase (Stock Receipt)</h3>
+          <h3 class="refresh-title">Record Materials Purchase (Stock Receipt)<button type="button" class="section-refresh no-print" data-refresh="compras">Refresh</button></h3>
           <form id="purchase-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
@@ -536,7 +543,7 @@
 
         <!-- CONTROL CONTABLE DE TAXES POR CICLO: MEJORA VISUAL ÚNICAMENTE -->
         <div class="data-section tax-report-section" style="margin-top: 1.5rem;">
-          <h3>Sales Tax Accounting by Reporting Period</h3>
+          <h3 class="refresh-title">Sales Tax Accounting by Reporting Period<button type="button" class="section-refresh no-print" data-refresh="compras">Refresh</button></h3>
           <div class="data-section-body">
             <div class="tax-accounting-top">
               <div class="tax-accounting-heading">
@@ -606,7 +613,7 @@
         </div>
 
         <div class="data-section tax-history-section" style="margin-top: 1.5rem;">
-          <h3>Purchase / Stock Receipt History</h3>
+          <h3 class="refresh-title">Purchase / Stock Receipt History<button type="button" class="section-refresh no-print" data-refresh="compras">Refresh</button></h3>
           <div class="tax-table-scroll">
           <table class="custom-table">
             <thead>
@@ -637,7 +644,7 @@
       <!-- SALIDAS / ENTREGAS -->
       <section id="tab-salidas" class="tab-content">
         <div class="form-card">
-          <h3 style="background: var(--primary-blue);">Record Materials Issue / Delivery</h3>
+          <h3 class="refresh-title" style="background: var(--primary-blue);">Record Materials Issue / Delivery<button type="button" class="section-refresh no-print" data-refresh="salidas">Refresh</button></h3>
           <form id="dispatch-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
               <div>
@@ -682,9 +689,9 @@
 
         <!-- DEVOLUCIONES PARCIALES: solo esta sección nueva, sin alterar el diseño original -->
         <div class="form-card" style="margin-top: 1.5rem;">
-          <h3 style="background: var(--header-green); display:flex; align-items:center; gap:0.5rem;">
+          <h3 class="refresh-title" style="background: var(--header-green); display:flex; align-items:center; gap:0.5rem;">
             <i data-lucide="package-check"></i> Return to General Inventory (Full or Partial)
-          </h3>
+          <button type="button" class="section-refresh no-print" data-refresh="salidas">Refresh</button></h3>
           <form id="return-form" class="data-section-body" style="display:flex; flex-direction:column; gap:1rem;">
             <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
               Select the original delivery and the quantity returned. Accepts <strong>0.5</strong>, <strong>1/2</strong> o <strong>1/4</strong>.
@@ -732,7 +739,7 @@
         </div>
 
         <div class="data-section" style="margin-top:1.5rem;">
-          <h3>General Inventory Returns History</h3>
+          <h3 class="refresh-title">General Inventory Returns History<button type="button" class="section-refresh no-print" data-refresh="salidas">Refresh</button></h3>
           <div style="overflow-x:auto;">
             <table class="custom-table">
               <thead>
@@ -746,7 +753,7 @@
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Delivery / Stock Issue History</h3>
+          <h3 class="refresh-title">Delivery / Stock Issue History<button type="button" class="section-refresh no-print" data-refresh="salidas">Refresh</button></h3>
           <table class="custom-table">
             <thead>
               <tr>
@@ -766,7 +773,7 @@
 
       <section id="tab-movimientos" class="tab-content">
         <div class="form-card">
-          <h3>Record Stock Receipt / Issue</h3>
+          <h3 class="refresh-title">Record Stock Receipt / Issue<button type="button" class="section-refresh no-print" data-refresh="movimientos">Refresh</button></h3>
           <form id="movement-form" class="inline-form">
             <select id="mov-producto" required><option value="">Select Product</option></select>
             <select id="mov-tipo" required>
@@ -779,6 +786,7 @@
           </form>
         </div>
 
+        <div class="refresh-bar"><strong>Stock Ledger</strong><button type="button" class="section-refresh no-print" data-refresh="movimientos">Refresh</button></div>
         <table class="custom-table">
           <thead>
             <tr>
@@ -797,7 +805,7 @@
       <!-- PESTAÑA: PROYECTOS / OBRAS -->
       <section id="tab-obras" class="tab-content">
         <div class="form-card">
-          <h3 style="background: var(--primary-blue);">Register New Project / Job Site</h3>
+          <h3 class="refresh-title" style="background: var(--primary-blue);">Register New Project / Job Site<button type="button" class="section-refresh no-print" data-refresh="obras">Refresh</button></h3>
           <form id="obra-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
               <div>
@@ -838,7 +846,7 @@
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Active Projects and Job Sites</h3>
+          <h3 class="refresh-title">Active Projects and Job Sites<button type="button" class="section-refresh no-print" data-refresh="obras">Refresh</button></h3>
           <table class="custom-table">
             <thead>
               <tr>
@@ -861,9 +869,9 @@
       <!-- PESTAÑA: CONTRATISTAS -->
       <section id="tab-contratistas" class="tab-content">
         <div class="form-card">
-          <h3 style="background: #17a2b8; display: flex; align-items: center; gap: 0.5rem;">
+          <h3 class="refresh-title" style="background: #17a2b8; display: flex; align-items: center; gap: 0.5rem;">
             <i data-lucide="id-card"></i> Personal Information
-          </h3>
+          <button type="button" class="section-refresh no-print" data-refresh="contratistas">Refresh</button></h3>
           
           <form id="contractor-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
@@ -969,7 +977,7 @@
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Contractor Directory</h3>
+          <h3 class="refresh-title">Contractor Directory<button type="button" class="section-refresh no-print" data-refresh="contratistas">Refresh</button></h3>
           <table class="custom-table">
             <thead>
               <tr>
@@ -991,9 +999,9 @@
       <!-- PESTAÑA: PROVEEDORES -->
       <section id="tab-proveedores" class="tab-content">
         <div class="form-card">
-          <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
+          <h3 class="refresh-title" style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
             <i data-lucide="truck"></i> Add / Edit Supplier
-          </h3>
+          <button type="button" class="section-refresh no-print" data-refresh="proveedores">Refresh</button></h3>
           
           <form id="provider-form" class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <input type="hidden" id="prov-id">
@@ -1048,7 +1056,7 @@
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Supplier Directory</h3>
+          <h3 class="refresh-title">Supplier Directory<button type="button" class="section-refresh no-print" data-refresh="proveedores">Refresh</button></h3>
           <table class="custom-table">
             <thead>
               <tr>
@@ -1074,7 +1082,7 @@
             <span class="sub-tag" style="background: rgba(255,255,255,0.15); color: #fff;">DELIVERY TRACKING</span>
             <h2>Request Tracking Center</h2>
             <p>Real-time tracking of approved requests and deliveries.</p>
-          </div>
+          </div><button type="button" class="section-refresh no-print" data-refresh="vencimientos">Refresh</button>
         </div>
 
         <div class="kpi-grid" style="margin-top: 1.5rem;">
@@ -1096,7 +1104,7 @@
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Approved Requests Under Tracking</h3>
+          <h3 class="refresh-title">Approved Requests Under Tracking<button type="button" class="section-refresh no-print" data-refresh="vencimientos">Refresh</button></h3>
           <table class="custom-table">
             <thead>
               <tr>
@@ -1120,9 +1128,9 @@
       <!-- PESTAÑA: REQUESTS / SOLICITUDES -->
       <section id="tab-etiquetas" class="tab-content">
         <div class="form-card">
-          <h3 style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
+          <h3 class="refresh-title" style="background: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;">
             <i data-lucide="file-plus"></i> Create New Material Request
-          </h3>
+          <button type="button" class="section-refresh no-print" data-refresh="etiquetas">Refresh</button></h3>
           
           <div class="data-section-body" style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 0.75rem;">
@@ -1184,7 +1192,7 @@
         </div>
 
         <div class="data-section" style="margin-top: 1.5rem;">
-          <h3>Submitted Material Requests</h3>
+          <h3 class="refresh-title">Submitted Material Requests<button type="button" class="section-refresh no-print" data-refresh="etiquetas">Refresh</button></h3>
           <table class="custom-table">
             <thead>
               <tr>
@@ -1284,6 +1292,7 @@
 
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 360px;"></div>
 
-  <script src="app.js?v=tool-assets-dates-1"></script>
+  <script src="app.js?v=section-refresh-1"></script>
 </body>
 </html>
+
