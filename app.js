@@ -2635,6 +2635,29 @@ const toolAssets = (() => {
     return details;
   }
 
+  function showToolValuation(items, allowed) {
+    const panel = document.getElementById('tools-valuation');
+    const label = document.getElementById('tools-valuation-label');
+    const value = document.getElementById('tools-valuation-value');
+    const note = document.getElementById('tools-valuation-note');
+    panel.hidden = !allowed;
+    label.textContent = value.textContent = note.textContent = '';
+    if (!allowed) return;
+    let cents = 0n;
+    let missing = 0;
+    for (const item of items) {
+      if (item.price == null) {
+        missing++;
+      } else {
+        const unitCents = BigInt(Math.round(Number(item.price) * 100));
+        cents += unitCents * BigInt(item.total);
+      }
+    }
+    label.textContent = missing ? 'Priced assets subtotal (USD)' : 'Total tool asset value (USD)';
+    value.textContent = '$' + (cents / 100n).toLocaleString('en-US') + '.' + String(cents % 100n).padStart(2, '0');
+    if (missing) note.textContent = missing + (missing === 1 ? ' tool type needs' : ' tool types need') + ' a unit price to complete the total.';
+  }
+
   function render(data) {
     inventory = data.inventory;
     const selection = assign.elements.tool.value;
@@ -2649,6 +2672,7 @@ const toolAssets = (() => {
     const canDelete = data.can_delete === true;
     document.getElementById('tools-actions').hidden = !canDelete;
     const canPrice = data.can_price === true;
+    showToolValuation(inventory, canPrice);
     document.getElementById('tools-price').hidden = !canPrice;
     const inventoryRows = inventory.map(item => {
       const row = [item.code || '—', item.tool, item.total, item.shop, item.assigned];
