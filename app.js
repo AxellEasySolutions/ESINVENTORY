@@ -78,13 +78,19 @@ let productoEditandoId = null;
 let comprasContabilidad = [];
 let compraEditandoTaxId = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   lucide.createIcons();
 
   const sesionGuardada = localStorage.getItem('sesion_usuario');
   if (sesionGuardada) {
-    usuarioActual = JSON.parse(sesionGuardada);
-    iniciarInterfaz();
+    const saved = JSON.parse(sesionGuardada);
+    const {data} = await _supabase.rpc('inventory_login', {p_email: saved.email, p_password: saved.password});
+    if (data) {
+      usuarioActual = {...data, password: saved.password};
+      iniciarInterfaz();
+    } else {
+      localStorage.removeItem('sesion_usuario');
+    }
   }
 
   document.getElementById('login-form').addEventListener('submit', iniciarSesion);
@@ -120,12 +126,7 @@ async function iniciarSesion(e) {
   const email = document.getElementById('login-email').value.trim().toLowerCase();
   const password = document.getElementById('login-password').value.trim();
 
-  const { data: usuario, error } = await _supabase
-    .from('usuarios')
-    .select('*')
-    .ilike('email', email)
-    .eq('password', password)
-    .maybeSingle();
+  const { data: usuario, error } = await _supabase.rpc('inventory_login', {p_email: email, p_password: password});
 
   if (error) {
     console.error('Error fetching users from Supabase:', error);
@@ -136,14 +137,21 @@ async function iniciarSesion(e) {
     return alert('Incorrect login credentials. Check your email and password.');
   }
 
-  usuarioActual = usuario;
-  localStorage.setItem('sesion_usuario', JSON.stringify(usuario));
+  usuarioActual = {...usuario, password};
+  localStorage.setItem('sesion_usuario', JSON.stringify(usuarioActual));
   iniciarInterfaz();
 }
 
 function cerrarSesion() {
   localStorage.removeItem('sesion_usuario');
   usuarioActual = null;
+  document.body.classList.remove('accounting-access');
+  comprasContabilidad = [];
+  document.getElementById('purchases-table-body').replaceChildren();
+  cerrarEdicionTax();
+  document.getElementById('purchase-form').reset();
+  inicializarControlesTaxes();
+  switchTab('dashboard');
   document.getElementById('login-screen').style.display = 'grid';
   document.getElementById('login-form').reset();
 }
@@ -184,7 +192,14 @@ function iniciarInterfaz() {
   escucharNotificacionesRequests();
 }
 
+function comprasRPC(action, input = {}) {
+  return _supabase.rpc('inventory_purchases', {
+    p_email: usuarioActual.email, p_password: usuarioActual.password, p_action: action, p_input: input
+  });
+}
+
 function aplicarPermisosRol() {
+  document.body.classList.toggle('accounting-access', usuarioActual?.accounting === true);
   const rol = usuarioActual ? usuarioActual.rol : 'GERENTE';
   const esSuperAdmin = rol === 'SUPERADMIN';
   const esAdmin = rol === 'ADMIN' || esSuperAdmin;
@@ -257,10 +272,7 @@ async function guardarNuevaContrasena(e) {
     return alert('The new password and confirmation do not match.');
   }
 
-  const { error } = await _supabase
-    .from('usuarios')
-    .update({ password: passNueva })
-    .eq('id', usuarioActual.id);
+  const { error } = await _supabase.rpc('inventory_password', {p_email: usuarioActual.email, p_password: passActual, p_new: passNueva});
 
   if (error) {
     return alert('Unable to update password: ' + error.message);
@@ -892,7 +904,7 @@ async function registrarCompra(e) {
 
   const nuevoStock = Number(prod.stock_actual) + cantidad;
   const autor = usuarioActual ? usuarioActual.nombre : 'Sistema';
-  const { error: errCompra } = await _supabase.from('compras').insert([{
+  const { error: errCompra } = await comprasRPC('insert', {
     producto_id: prodId,
     proveedor,
     factura,
@@ -911,7 +923,7 @@ async function registrarCompra(e) {
     tax_ciclo: ciclo,
     tax_estado: 'PENDIENTE', // Nunca marcar como declarado automáticamente.
     updated_by: autor
-  }]);
+  });
 
   if (errCompra) return alert('Unable to record purchase: ' + errCompra.message + '\nMake sure the sales tax SQL migration has been installed.');
 
@@ -938,7 +950,7 @@ async function registrarCompra(e) {
     return;
   }
 
-  alert('Purchase recorded successfully! Sales tax is pending accounting review.');
+  alert(usuarioActual?.accounting ? 'Purchase recorded successfully! Sales tax is pending accounting review.' : 'Purchase recorded successfully!');
   document.getElementById('purchase-form').reset();
   inicializarControlesTaxes();
   cargarDatos();
@@ -966,15 +978,15 @@ function comprasFiltradasPorCiclo() {
 async function cargarHistorialCompras() {
   const tbody = document.getElementById('purchases-table-body');
   if (!tbody) return;
+  const owner = usuarioActual;
+  if (!owner) return;
   const pagina = 500;
   const acumuladas = [];
   let errorCarga = null;
   // Paginación explícita: Supabase limita el número de filas por respuesta.
   for (let desde = 0; ; desde += pagina) {
-    const { data, error } = await _supabase.from('compras')
-      .select('*, productos(nombre)')
-      .order('fecha', { ascending: false })
-      .range(desde, desde + pagina - 1);
+    const { data, error } = await comprasRPC('list', {offset: desde});
+    if (owner !== usuarioActual) return;
     if (error) { errorCarga = error; break; }
     acumuladas.push(...(data || []));
     if (!data || data.length < pagina) break;
@@ -991,6 +1003,22 @@ async function cargarHistorialCompras() {
 function renderizarControlTaxes() {
   const tbody = document.getElementById('purchases-table-body');
   if (!tbody) return;
+  if (!usuarioActual?.accounting) {
+    tbody.replaceChildren();
+    for (const c of comprasContabilidad) {
+      const row = tbody.insertRow();
+      for (const value of [compraFechaTexto(c), c.factura, c.productos?.nombre, c.proveedor, c.cantidad,
+        dineroTax(centsTax(c.costo_unitario)), dineroTax(centsTax(c.total)), englishUIValue(c.estado_pago), c.updated_by]) {
+        row.insertCell().textContent = value ?? '';
+      }
+    }
+    if (!tbody.rows.length) {
+      const cell = tbody.insertRow().insertCell();
+      cell.colSpan = 9;
+      cell.textContent = 'No purchases found.';
+    }
+    return;
+  }
   const filtro = document.getElementById('tax-ciclo-filtro')?.value || '';
   const etiqueta = document.getElementById('tax-ciclo-etiqueta');
   if (etiqueta) etiqueta.innerText = filtro ? `Selected accounting period: ${filtro}` : 'Showing all accounting periods';
@@ -1020,7 +1048,7 @@ function renderizarControlTaxes() {
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:1.5rem;">No purchases found for this period.</td></tr>';
     return;
   }
-  const puedeReportar = usuarioActual && ['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol);
+  const puedeReportar = usuarioActual?.accounting === true;
   tbody.innerHTML = compras.map(c => {
     const importeTax = centsTax(c.tax_monto);
     const totalConTax = c.total_con_tax == null ? centsTax(c.total) + importeTax : centsTax(c.total_con_tax);
@@ -1060,8 +1088,8 @@ function mostrarTodosLosCiclosTax() {
 
 // Edición contable independiente: útil para actualizar impuestos de compras históricas.
 function abrirEdicionTax(compraId) {
-  if (!usuarioActual || !['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol)) {
-    return alert('Only administrators can edit purchase taxes.');
+  if (!usuarioActual?.accounting) {
+    return alert('Only authorized accounting users can edit purchase taxes.');
   }
   const compra = comprasContabilidad.find(c => c.id === compraId);
   if (!compra) return alert('Selected purchase was not found.');
@@ -1103,8 +1131,8 @@ function calcularEdicionTax() {
 
 async function guardarEdicionTax(e) {
   e.preventDefault();
-  if (!usuarioActual || !['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol)) {
-    return alert('Only administrators can edit sales tax.');
+  if (!usuarioActual?.accounting) {
+    return alert('Only authorized accounting users can edit sales tax.');
   }
   const compra = comprasContabilidad.find(c => c.id === compraEditandoTaxId);
   if (!compra) return alert('Purchase not found.');
@@ -1144,8 +1172,8 @@ async function guardarEdicionTax(e) {
     tax_actualizado_fecha: new Date().toISOString(),
     tax_actualizado_por: usuarioActual.nombre
   };
-  const { data, error } = await _supabase.from('compras').update(cambios).eq('id', compra.id).select('id');
-  if (error || !data?.length) {
+  const { data, error } = await comprasRPC('edit', {...cambios, id: compra.id});
+  if (error || !data) {
     return alert('Unable to update sales tax: ' + (error?.message || 'Check Supabase permissions.'));
   }
   cerrarEdicionTax();
@@ -1153,8 +1181,8 @@ async function guardarEdicionTax(e) {
 }
 
 async function cambiarEstadoTax(compraId, nuevoEstado) {
-  if (!usuarioActual || !['ADMIN', 'SUPERADMIN'].includes(usuarioActual.rol)) {
-    return alert('Only administrators can change the tax reporting status.');
+  if (!usuarioActual?.accounting) {
+    return alert('Only authorized accounting users can change the tax reporting status.');
   }
   if (!['PENDIENTE', 'REPORTADO'].includes(nuevoEstado)) return;
   const compra = comprasContabilidad.find(c => c.id === compraId);
@@ -1165,8 +1193,8 @@ async function cambiarEstadoTax(compraId, nuevoEstado) {
     tax_reportado_fecha: nuevoEstado === 'REPORTADO' ? new Date().toISOString() : null,
     tax_reportado_por: nuevoEstado === 'REPORTADO' ? usuarioActual.nombre : null
   };
-  const { data, error } = await _supabase.from('compras').update(nuevoValor).eq('id', compraId).select('id');
-  if (error || !data?.length) return alert('Unable to update accounting status. Check Supabase permissions. ' + (error?.message || ''));
+  const { data, error } = await comprasRPC('status', {...nuevoValor, id: compraId});
+  if (error || !data) return alert('Unable to update accounting status. Check Supabase permissions. ' + (error?.message || ''));
   await cargarHistorialCompras();
 }
 
@@ -1178,6 +1206,7 @@ function celdaCSVTax(valor) {
 }
 
 function exportarTaxesCSV() {
+  if (!usuarioActual?.accounting) return;
   const compras = comprasFiltradasPorCiclo();
   if (!compras.length) return alert('No purchases to export for the selected period.');
   const filas = [[
@@ -2453,7 +2482,7 @@ function switchTab(tabId) {
   if (targetTab) targetTab.classList.add('active');
 
   if (tabId === 'tools') toolAssets.refresh();
-  if (window.event && window.event.currentTarget) event.currentTarget.classList.add('active');
+  if (window.event?.currentTarget?.classList) window.event.currentTarget.classList.add('active');
 }
 
 function openModal() { document.getElementById('modal-product').classList.add('open'); }
@@ -2669,4 +2698,3 @@ document.addEventListener('click', async event => {
     buttons.forEach(control => { control.disabled = false; });
   }
 });
-
